@@ -14,6 +14,7 @@ export const createOrderSchema = z.object({
 });
 
 export const updateOrderSchema = z.object({
+    userId: z.string().min(1).optional(),
     dueDate: z.coerce.date().optional(),
     items: z
         .array(

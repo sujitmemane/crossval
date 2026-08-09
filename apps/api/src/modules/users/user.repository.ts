@@ -8,9 +8,9 @@ export const findUserByEmail = async (email: string) => {
     return await User.findOne({ email });
 };
 
-export const findUserById = async (id: string) => {
-    return await User.findById(id);
-};  
+export const findUserById = async (id: string, organizationId: string) => {
+    return await User.findOne({ _id: id, organizationId });
+};
 
 
 export const findUserByResetPasswordToken = async (token: string,date: Date) => {

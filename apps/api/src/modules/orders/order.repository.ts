@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Order } from './order.model';
 
 interface OrderItemInput {
@@ -15,13 +16,15 @@ interface CreateOrderInput {
 }
 
 interface UpdateOrderInput {
+    userId?: string;
     dueDate?: Date;
     items?: OrderItemInput[];
     totalAmount?: number;
 }
 
-export const createOrder = async (order: CreateOrderInput) => {
-    return await Order.create(order);
+export const createOrder = async (order: CreateOrderInput, session?: mongoose.ClientSession) => {
+    const [created] = await Order.create([order], { session });
+    return created;
 };
 
 export const findOrderById = async (id: string, organizationId: string) => {
@@ -44,6 +47,11 @@ export const findOrdersByOrganization = async (
     return { orders, total };
 };
 
-export const updateOrderById = async (id: string, organizationId: string, updates: UpdateOrderInput) => {
-    return await Order.findOneAndUpdate({ _id: id, organizationId }, updates, { new: true });
+export const updateOrderById = async (
+    id: string,
+    organizationId: string,
+    updates: UpdateOrderInput,
+    session?: mongoose.ClientSession
+) => {
+    return await Order.findOneAndUpdate({ _id: id, organizationId }, updates, { new: true, session });
 };

@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
-import Transaction from './transaction.model';
+import Transaction, { ITransaction } from './transaction.model';
+
+
+
+export const createTransaction = async (transaction: ITransaction, session?: mongoose.ClientSession) => {
+    const [created] = await Transaction.create([transaction], { session });
+    return created;
+};
 
 export const getAmountPaidForOrder = async (orderId: string, organizationId: string): Promise<number> => {
     const [result] = await Transaction.aggregate([
@@ -23,6 +30,12 @@ export const getAmountPaidForOrder = async (orderId: string, organizationId: str
 
     return result?.total ?? 0;
 };
+
+
+
+export const getTransactionsByOrderId= async(organizationId: string, orderId: string): Promise<ITransaction[]> => {
+    return await Transaction.find({ organizationId: new mongoose.Types.ObjectId(organizationId), orderId: new mongoose.Types.ObjectId(orderId) });
+}
 
 export const getAmountPaidForOrders = async (orderIds: string[], organizationId: string): Promise<Map<string, number>> => {
     const results = await Transaction.aggregate([

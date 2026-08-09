@@ -22,6 +22,7 @@ export const getOrders = async (req: Request, res: Response) => {
 
 export const updateOrder = async (req: Request, res: Response) => {
     const organizationId = req.user!.organizationId!;
-    const result = await orderService.updateOrder(organizationId, req.params.id as string, req.body);
+    const userId = req.user!.sub;
+    const result = await orderService.updateOrder(organizationId, userId, req.params.id as string, req.body);
     res.status(200).json(result);
 };

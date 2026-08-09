@@ -2,6 +2,8 @@ import express ,{ Request, Response } from 'express';
 import authRouter from './modules/auth/auth.routes';
 import itemRouter from './modules/items/item.routes';
 import orderRouter from './modules/orders/order.routes';
+import auditLogRouter from './modules/audit-logs/audit-log.routes';
+import transactionRouter from './modules/transactions/transaction.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
@@ -15,6 +17,8 @@ app.get('/', (req: Request, res: Response<{ message: string }>) => {
 app.use('/api/auth', authRouter);
 app.use('/api/items', itemRouter);
 app.use('/api/orders', orderRouter);
+app.use('/api/audit-logs', auditLogRouter);
+app.use('/api/transactions', transactionRouter);
 
 app.use(errorHandler);
 

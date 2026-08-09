@@ -10,7 +10,7 @@ import {
     createItemSchema,
     getItemsSchema,
     updateItemSchema,
-} from "./item.validate";
+} from "./item.schema";
 
 const itemRouter = Router();
 
