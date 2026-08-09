@@ -1,4 +1,4 @@
-export type OrderStatus = "pending" | "partially_paid" | "paid" | "overdue";
+export type OrderStatus = "PENDING" | "PARTIALLY_PAID" | "PAID" | "OVERDUE";
 
 interface DeriveOrderStatusInput {
   totalAmount: number;
@@ -13,8 +13,8 @@ export function deriveOrderStatus({
   dueDate,
   now = new Date(),
 }: DeriveOrderStatusInput): OrderStatus {
-  if (amountPaid >= totalAmount) return "paid";
-  if (now > dueDate) return "overdue";
-  if (amountPaid > 0) return "partially_paid";
-  return "pending";
+  if (amountPaid >= totalAmount) return "PAID";
+  if (now > dueDate) return "OVERDUE";
+  if (amountPaid > 0) return "PARTIALLY_PAID";
+  return "PENDING";
 }

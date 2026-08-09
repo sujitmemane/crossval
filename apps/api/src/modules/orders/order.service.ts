@@ -4,7 +4,8 @@ import { calculateOrderTotal } from '../../domain/order/calculate-total';
 import { isOrderUpdateAllowed } from '../../domain/order/order-update';
 import { createOrder as createOrderRepo, findOrderById, findOrdersByOrganization, updateOrderById } from './order.repository';
 import { findItemsByIds } from '../items/item.repository';
-import { getAmountPaidForOrder } from '../transactions/transaction.repository';
+import { getAmountPaidForOrder, getAmountPaidForOrders } from '../transactions/transaction.repository';
+import { deriveOrderStatus } from '../../domain/order/derive-status';
 
 const resolveOrderItems = async (
     organizationId: string,
@@ -48,8 +49,20 @@ export const getOrders = async (
     filters: { userId?: string; page: number; limit: number }
 ) => {
     const { orders, total } = await findOrdersByOrganization(organizationId, filters);
+
+    const orderIds = orders.map((order) => order._id.toString());
+    const amountPaidByOrder = await getAmountPaidForOrders(orderIds, organizationId);
+
+    const ordersWithStatus = orders.map((order) => ({
+        ...order,
+        status: deriveOrderStatus({
+            totalAmount: order.totalAmount,
+            amountPaid: amountPaidByOrder.get(order._id.toString()) ?? 0,
+            dueDate: order.dueDate,
+        }),
+    }));
     return success('Orders fetched successfully', {
-        orders,
+        orders: ordersWithStatus,
         pagination: { page: filters.page, limit: filters.limit, total },
     });
 };

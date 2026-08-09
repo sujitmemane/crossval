@@ -23,3 +23,26 @@ export const getAmountPaidForOrder = async (orderId: string, organizationId: str
 
     return result?.total ?? 0;
 };
+
+export const getAmountPaidForOrders = async (orderIds: string[], organizationId: string): Promise<Map<string, number>> => {
+    const results = await Transaction.aggregate([
+        {
+            $match: {
+                orderId: { $in: orderIds.map((id) => new mongoose.Types.ObjectId(id)) },
+                organizationId: new mongoose.Types.ObjectId(organizationId),
+            },
+        },
+        {
+            $group: {
+                _id: '$orderId',
+                total: {
+                    $sum: {
+                        $cond: [{ $eq: ['$type', 'REFUND'] }, { $multiply: ['$amount', -1] }, '$amount'],
+                    },
+                },
+            },
+        },
+    ]);
+
+    return new Map(results.map((result) => [result._id.toString(), result.total]));
+};

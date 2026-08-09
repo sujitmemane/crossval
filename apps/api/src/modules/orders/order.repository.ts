@@ -37,7 +37,7 @@ export const findOrdersByOrganization = async (
 
     const skip = (filters.page - 1) * filters.limit;
     const [orders, total] = await Promise.all([
-        Order.find(query).skip(skip).limit(filters.limit),
+        Order.find(query).skip(skip).limit(filters.limit).lean(),
         Order.countDocuments(query),
     ]);
 
