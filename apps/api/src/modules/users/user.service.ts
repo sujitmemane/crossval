@@ -87,6 +87,7 @@ export const createUser = async (
     });
 
     if (input.role === 'ADMIN') {
+        console.log("Sending email to", input.email);
         await sendEmail(
             input.email,
             `Welcome to ${organization.name}`,

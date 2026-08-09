@@ -1,21 +1,25 @@
+import nodemailer from 'nodemailer';
 import { env } from "../config/env";
-import { Resend } from "resend";
 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: env.smtpUser,
+        pass: env.smtpPass,
+    },
+});
 
-
-const resend = new Resend(env.resendApiKey as string);
 export const sendEmail = async (email: string, subject: string, html: string): Promise<boolean> => {
-    const { error } = await resend.emails.send({
-        from: 'officialsujitmemane@gmail.com',
-        to: email,
-        subject,
-        html,
-    });
-
-    if (error) {
+    try {
+        await transporter.sendMail({
+            from: env.smtpUser,
+            to: email,
+            subject,
+            html,
+        });
+        return true;
+    } catch (error) {
         console.error('Failed to send email', error);
         return false;
     }
-
-    return true;
 };
