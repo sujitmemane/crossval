@@ -9,3 +9,7 @@ export const createTransaction = async (transaction: ITransaction, session?: mon
 export const getTransactionsByOrderId = async (organizationId: string, orderId: string): Promise<ITransaction[]> => {
     return await Transaction.find({ organizationId: new mongoose.Types.ObjectId(organizationId), orderId: new mongoose.Types.ObjectId(orderId) });
 };
+
+export const findTransactionByIdempotencyKey = async (organizationId: string, idempotencyKey: string) => {
+    return await Transaction.findOne({ organizationId: new mongoose.Types.ObjectId(organizationId), idempotencyKey });
+};

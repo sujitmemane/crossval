@@ -349,7 +349,7 @@
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": 50,\n  \"type\": \"PAYMENT\",\n  \"method\": \"CARD\",\n  \"note\": \"Initial payment\"\n}"
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": 50,\n  \"type\": \"PAYMENT\",\n  \"method\": \"CARD\",\n  \"note\": \"Initial payment\",\n  \"idempotencyKey\": \"{{$guid}}\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"] }
           }
@@ -362,7 +362,7 @@
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": 10,\n  \"type\": \"REFUND\",\n  \"method\": \"CARD\",\n  \"note\": \"Partial refund\"\n}"
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": 10,\n  \"type\": \"REFUND\",\n  \"method\": \"CARD\",\n  \"note\": \"Partial refund\",\n  \"idempotencyKey\": \"{{$guid}}\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"] }
           }

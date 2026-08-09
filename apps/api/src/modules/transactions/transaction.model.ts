@@ -7,6 +7,7 @@ export interface ITransaction {
     type: "PAYMENT" | "REFUND";
     method?: "CASH" | "BANK_TRANSFER" | "CARD" | "UPI" | "OTHER";
     note?: string;
+    idempotencyKey: string;
 }
 
 const transactionSchema = new mongoose.Schema<ITransaction>({
@@ -36,9 +37,15 @@ const transactionSchema = new mongoose.Schema<ITransaction>({
     note: {
         type: String,
     },
+    idempotencyKey: {
+        type: String,
+        required: true,
+      },
 }, {
     timestamps: true,
 });
+
+transactionSchema.index({ organizationId: 1, idempotencyKey: 1 }, { unique: true });
 
 const Transaction = mongoose.model<ITransaction>('Transaction', transactionSchema);
 

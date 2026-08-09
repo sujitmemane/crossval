@@ -6,6 +6,7 @@ export const createTransactionSchema = z.object({
     type: z.enum(['PAYMENT', 'REFUND']),
     method: z.enum(['CASH', 'BANK_TRANSFER', 'CARD', 'UPI', 'OTHER']).optional(),
     note: z.string().optional(),
+    idempotencyKey: z.string().min(1),
 });
 
 export const getTransactionsSchema = z.object({
