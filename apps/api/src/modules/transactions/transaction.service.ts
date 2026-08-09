@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 import { ITransaction } from "./transaction.model";
-import { createTransaction as createTransactionRepo, getAmountPaidForOrder, getTransactionsByOrderId } from "./transaction.repository";
+import { createTransaction as createTransactionRepo, getTransactionsByOrderId } from "./transaction.repository";
 import { success } from "../../lib/response";
 import { recordAuditLog } from "../audit-logs/audit-log.service";
 import { AuditAction } from "../audit-logs/audit-log.model";
 import { AppError } from "../../lib/errors";
-import { findOrderById } from "../orders/order.repository";
+import { findOrderById, applyOrderPayment } from "../orders/order.repository";
 import { deriveOrderStatus } from "../../domain/order/derive-status";
 import { isRefundAllowed, isPaymentAllowed } from "../../domain/payment/validate-payment";
 
@@ -28,17 +28,27 @@ export const createTransaction = async (organizationId: string, userId: string, 
             throw new AppError('Order not found', 404);
         }
 
-        const amountPaidBefore = await getAmountPaidForOrder(orderId.toString(), organizationId, session);
+        const overpaymentMessage = 'Payment amount would exceed the order total';
+        const overrefundMessage = 'Refund amount cannot exceed the amount already paid';
 
-        if (type === 'REFUND' && !isRefundAllowed(amountPaidBefore, amount)) {
-            throw new AppError('Refund amount cannot exceed the amount already paid', 400);
+      
+        if (type === 'REFUND' && !isRefundAllowed(order.amountPaid, amount)) {
+            throw new AppError(overrefundMessage, 400);
+        }
+        if (type === 'PAYMENT' && !isPaymentAllowed(order.amountPaid, order.totalAmount, amount)) {
+            throw new AppError(overpaymentMessage, 400);
         }
 
-        if (type === 'PAYMENT' && !isPaymentAllowed(amountPaidBefore, order.totalAmount, amount)) {
-            throw new AppError('Payment amount would exceed the order total', 400);
+        const signedAmount = type === 'REFUND' ? -amount : amount;
+
+        
+        const updatedOrder = await applyOrderPayment(orderId.toString(), organizationId, signedAmount, session);
+        if (!updatedOrder) {
+            throw new AppError(type === 'REFUND' ? overrefundMessage : overpaymentMessage, 400);
         }
 
-        const amountPaidAfter = amountPaidBefore + (type === 'REFUND' ? -amount : amount);
+        const amountPaidBefore = updatedOrder.amountPaid - signedAmount;
+        const amountPaidAfter = updatedOrder.amountPaid;
 
         const statusBefore = deriveOrderStatus({ totalAmount: order.totalAmount, amountPaid: amountPaidBefore, dueDate: order.dueDate });
         const statusAfter = deriveOrderStatus({ totalAmount: order.totalAmount, amountPaid: amountPaidAfter, dueDate: order.dueDate });

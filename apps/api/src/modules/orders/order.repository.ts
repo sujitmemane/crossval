@@ -55,3 +55,25 @@ export const updateOrderById = async (
 ) => {
     return await Order.findOneAndUpdate({ _id: id, organizationId }, updates, { new: true, session });
 };
+
+export const applyOrderPayment = async (
+    id: string,
+    organizationId: string,
+    signedAmount: number,
+    session: mongoose.ClientSession
+) => {
+    return await Order.findOneAndUpdate(
+        {
+            _id: id,
+            organizationId,
+            $expr: {
+                $and: [
+                    { $gte: [{ $add: ['$amountPaid', signedAmount] }, 0] },
+                    { $lte: [{ $add: ['$amountPaid', signedAmount] }, '$totalAmount'] },
+                ],
+            },
+        },
+        { $inc: { amountPaid: signedAmount } },
+        { new: true, session }
+    );
+};

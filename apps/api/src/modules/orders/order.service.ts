@@ -6,7 +6,6 @@ import { isOrderUpdateAllowed } from '../../domain/order/order-update';
 import { createOrder as createOrderRepo, findOrderById, findOrdersByOrganization, updateOrderById } from './order.repository';
 import { findItemsByIds } from '../items/item.repository';
 import { findUserById } from '../users/user.repository';
-import { getAmountPaidForOrder, getAmountPaidForOrders } from '../transactions/transaction.repository';
 import { deriveOrderStatus } from '../../domain/order/derive-status';
 import { recordAuditLog } from '../audit-logs/audit-log.service';
 
@@ -77,14 +76,11 @@ export const getOrders = async (
 ) => {
     const { orders, total } = await findOrdersByOrganization(organizationId, filters);
 
-    const orderIds = orders.map((order) => order._id.toString());
-    const amountPaidByOrder = await getAmountPaidForOrders(orderIds, organizationId);
-
     const ordersWithStatus = orders.map((order) => ({
         ...order,
         status: deriveOrderStatus({
             totalAmount: order.totalAmount,
-            amountPaid: amountPaidByOrder.get(order._id.toString()) ?? 0,
+            amountPaid: order.amountPaid,
             dueDate: order.dueDate,
         }),
     }));
@@ -117,9 +113,8 @@ export const updateOrder = async (
 
     if (updates.items) {
         const orderItems = await resolveOrderItems(organizationId, updates.items);
-        const amountPaid = await getAmountPaidForOrder(id, organizationId);
 
-        if (!isOrderUpdateAllowed(amountPaid, currentOrder!.totalAmount, orderItems)) {
+        if (!isOrderUpdateAllowed(currentOrder!.amountPaid, currentOrder!.totalAmount, orderItems)) {
             throw new AppError('Order cannot be edited: it is either fully paid or the new total would drop below the amount already paid', 400);
         }
 

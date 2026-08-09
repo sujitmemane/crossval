@@ -12,6 +12,7 @@ export interface IOrder {
   dueDate: Date;
   items: IOrderItem[];
   totalAmount: number;
+  amountPaid: number;
 }
 
 const orderItemSchema = new mongoose.Schema<IOrderItem>(
@@ -66,6 +67,12 @@ const orderSchema = new mongoose.Schema<IOrder>(
       type: Number,
       required: true,
       min: 0,
+    },
+    amountPaid: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
   },
   {
