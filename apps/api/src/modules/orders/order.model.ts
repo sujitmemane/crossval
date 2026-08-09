@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 export interface IOrderItem {
   itemId: mongoose.Types.ObjectId;
   quantity: number;
+  rate: number;
 }
 
 export interface IOrder {
@@ -24,6 +25,11 @@ const orderItemSchema = new mongoose.Schema<IOrderItem>(
       type: Number,
       required: true,
       min: [1, "Quantity must be at least 1"],
+    },
+    rate: {
+      type: Number,
+      required: true,
+      min: 0,
     },
   },
   { _id: true }

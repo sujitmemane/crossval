@@ -24,3 +24,7 @@ export const findItemsByOrganization = async (
 export const updateItemById = async (id: string, organizationId: string, updates: Partial<IItem>) => {
     return await Item.findOneAndUpdate({ _id: id, organizationId }, updates, { new: true });
 };
+
+export const findItemsByIds = async (ids: string[], organizationId: string) => {
+    return await Item.find({ _id: { $in: ids }, organizationId });
+};
