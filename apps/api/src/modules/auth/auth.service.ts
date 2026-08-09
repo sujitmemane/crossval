@@ -12,7 +12,7 @@ import {
     verifyRefreshToken,
     TokenPayload,
 } from './auth.utils';
-import { findUserByEmail, createUser, findUserByResetPasswordToken } from '../users/user.repository';
+import { findUserByEmail, createUser, findUserByIdUnscoped, findUserByResetPasswordToken } from '../users/user.repository';
 import { createOrganization } from '../organizations/organization.repository';
 import { sendEmail } from '../../lib/email';
 
@@ -64,14 +64,23 @@ export const signin = async (input: { email: string; password: string }) => {
     });
 };
 
-export const refreshAccessToken = (token: string) => {
+export const refreshAccessToken = async (token: string) => {
+    let decoded: TokenPayload;
     try {
-        const decoded = verifyRefreshToken(token);
-        const accessToken = generateAccessToken({ sub: decoded.sub, role: decoded.role, organizationId: decoded.organizationId });
-        return success('Access token refreshed', { accessToken });
+        decoded = verifyRefreshToken(token);
     } catch {
         throw new AppError('Invalid or expired refresh token', 401);
     }
+
+    const user = await findUserByIdUnscoped(decoded.sub);
+    if (!user) throw new AppError('Invalid or expired refresh token', 401);
+
+    const accessToken = generateAccessToken({
+        sub: user._id.toString(),
+        role: user.role,
+        organizationId: user.organizationId?.toString(),
+    });
+    return success('Access token refreshed', { accessToken });
 };
 
 export const verifyAccessToken = (token: string) => {

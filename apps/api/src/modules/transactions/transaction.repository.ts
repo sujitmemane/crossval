@@ -8,7 +8,7 @@ export const createTransaction = async (transaction: ITransaction, session?: mon
     return created;
 };
 
-export const getAmountPaidForOrder = async (orderId: string, organizationId: string): Promise<number> => {
+export const getAmountPaidForOrder = async (orderId: string, organizationId: string, session?: mongoose.ClientSession): Promise<number> => {
     const [result] = await Transaction.aggregate([
         {
             $match: {
@@ -26,7 +26,7 @@ export const getAmountPaidForOrder = async (orderId: string, organizationId: str
                 },
             },
         },
-    ]);
+    ]).session(session ?? null);
 
     return result?.total ?? 0;
 };

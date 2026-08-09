@@ -21,6 +21,11 @@ const resolveOrderItems = async (
         throw new AppError('One or more items not found', 400);
     }
 
+    const unavailableItems = foundItems.filter((item) => item.status !== 'AVAILABLE');
+    if (unavailableItems.length > 0) {
+        throw new AppError(`Item "${unavailableItems[0].name}" is not available`, 400);
+    }
+
     const itemById = new Map(foundItems.map((item) => [item._id.toString(), item]));
     return items.map((item) => ({
         itemId: item.itemId,

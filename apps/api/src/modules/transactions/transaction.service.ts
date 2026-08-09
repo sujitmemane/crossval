@@ -7,6 +7,7 @@ import { AuditAction } from "../audit-logs/audit-log.model";
 import { AppError } from "../../lib/errors";
 import { findOrderById } from "../orders/order.repository";
 import { deriveOrderStatus } from "../../domain/order/derive-status";
+import { isRefundAllowed, isPaymentAllowed } from "../../domain/payment/validate-payment";
 
 export const createTransaction = async (organizationId: string, userId: string, transaction: ITransaction) => {
     const {
@@ -27,7 +28,16 @@ export const createTransaction = async (organizationId: string, userId: string, 
             throw new AppError('Order not found', 404);
         }
 
-        const amountPaidBefore = await getAmountPaidForOrder(orderId.toString(), organizationId);
+        const amountPaidBefore = await getAmountPaidForOrder(orderId.toString(), organizationId, session);
+
+        if (type === 'REFUND' && !isRefundAllowed(amountPaidBefore, amount)) {
+            throw new AppError('Refund amount cannot exceed the amount already paid', 400);
+        }
+
+        if (type === 'PAYMENT' && !isPaymentAllowed(amountPaidBefore, order.totalAmount, amount)) {
+            throw new AppError('Payment amount would exceed the order total', 400);
+        }
+
         const amountPaidAfter = amountPaidBefore + (type === 'REFUND' ? -amount : amount);
 
         const statusBefore = deriveOrderStatus({ totalAmount: order.totalAmount, amountPaid: amountPaidBefore, dueDate: order.dueDate });

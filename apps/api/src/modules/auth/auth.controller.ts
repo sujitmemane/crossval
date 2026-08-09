@@ -12,7 +12,7 @@ export const signin = async (req: Request, res: Response) => {
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
-    const result = authService.refreshAccessToken(req.body.refreshToken);
+    const result = await authService.refreshAccessToken(req.body.refreshToken);
     res.status(200).json(result);
 };
 
