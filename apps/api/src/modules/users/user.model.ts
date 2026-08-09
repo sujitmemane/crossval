@@ -5,6 +5,10 @@ export interface IUser {
     email: string;
     password: string;
     role: "ADMIN" | "CUSTOMER";
+    organizationId?: mongoose.Types.ObjectId;
+    isOrganizationConfigured?: boolean;
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -25,6 +29,20 @@ const userSchema = new mongoose.Schema<IUser>({
         type: String,
         enum: ["ADMIN", "CUSTOMER"],
         default: "CUSTOMER",
+    },
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+    },
+    isOrganizationConfigured: {
+        type: Boolean,
+        default: false,
+    },
+    resetPasswordToken: {
+        type: String,
+    },
+    resetPasswordExpires: {
+        type: Date,
     },
 }, {
     timestamps: true,

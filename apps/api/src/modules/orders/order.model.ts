@@ -6,6 +6,7 @@ export interface IOrderItem {
 }
 
 export interface IOrder {
+  organizationId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   dueDate: Date;
   items: IOrderItem[];
@@ -30,6 +31,12 @@ const orderItemSchema = new mongoose.Schema<IOrderItem>(
 
 const orderSchema = new mongoose.Schema<IOrder>(
   {
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+    },
+
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

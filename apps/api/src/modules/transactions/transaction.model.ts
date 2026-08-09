@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 export interface ITransaction {
+    organizationId: mongoose.Types.ObjectId;
     orderId: mongoose.Types.ObjectId;
     amount: number;
     type: "PAYMENT" | "REFUND";
@@ -9,6 +10,11 @@ export interface ITransaction {
 }
 
 const transactionSchema = new mongoose.Schema<ITransaction>({
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        required: true,
+    },
     orderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Order",

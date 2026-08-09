@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 export interface IItem {
+    organizationId: mongoose.Types.ObjectId;
     name: string;
     description?: string;
     quantity: number;
@@ -9,6 +10,11 @@ export interface IItem {
 }
 
 const itemSchema = new mongoose.Schema<IItem>({
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        required: true,
+    },
     name: {
         type: String,
         required: true,
