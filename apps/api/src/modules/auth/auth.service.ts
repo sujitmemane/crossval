@@ -20,12 +20,14 @@ const RESET_CODE_TTL_MS = 10 * 60 * 1000;
 
 export const signup = async (input: {
     organizationName: string;
+    country: string;
+    currency: string;
     name: string;
     email: string;
     password: string;
     role: 'ADMIN' | 'CUSTOMER';
 }) => {
-    const { organizationName, name, email, password, role } = input;
+    const { organizationName, country, currency, name, email, password, role } = input;
     const existing = await findUserByEmail(email);
     if (existing) throw new AppError('Email already in use', 409);
 
@@ -33,13 +35,13 @@ export const signup = async (input: {
     const user = await createUser({ name, email, password: hashedPassword, role });
 
     if (role === 'ADMIN') {
-        const organization = await createOrganization({ name: organizationName, ownerId: user._id.toString() });
+        const organization = await createOrganization({ name: organizationName, ownerId: user._id.toString(), country, currency });
         user.organizationId = organization._id;
         user.isOrganizationConfigured = true;
         await user.save();
     }
 
-    const payload: TokenPayload = { sub: user._id.toString(), role: user.role };
+    const payload: TokenPayload = { sub: user._id.toString(), role: user.role, organizationId: user.organizationId?.toString() };
     return success('Account created successfully', {
         user: toSafeUser(user),
         accessToken: generateAccessToken(payload),
@@ -54,7 +56,7 @@ export const signin = async (input: { email: string; password: string }) => {
     const isMatch = await bcrypt.compare(input.password, user.password);
     if (!isMatch) throw new AppError('Invalid email or password', 401);
 
-    const payload: TokenPayload = { sub: user._id.toString(), role: user.role };
+    const payload: TokenPayload = { sub: user._id.toString(), role: user.role, organizationId: user.organizationId?.toString() };
     return success('Signed in successfully', {
         user: toSafeUser(user),
         accessToken: generateAccessToken(payload),
@@ -65,7 +67,7 @@ export const signin = async (input: { email: string; password: string }) => {
 export const refreshAccessToken = (token: string) => {
     try {
         const decoded = verifyRefreshToken(token);
-        const accessToken = generateAccessToken({ sub: decoded.sub, role: decoded.role });
+        const accessToken = generateAccessToken({ sub: decoded.sub, role: decoded.role, organizationId: decoded.organizationId });
         return success('Access token refreshed', { accessToken });
     } catch {
         throw new AppError('Invalid or expired refresh token', 401);

@@ -1,6 +1,6 @@
 import Organization from "./organization.model";
 
-export const createOrganization = async (input: { name: string; ownerId: string }) => {
+export const createOrganization = async (input: { name: string; ownerId: string; country: string; currency: string }) => {
     const organization = await Organization.create(input);
     return organization;
 };

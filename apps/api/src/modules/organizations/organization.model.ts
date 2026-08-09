@@ -4,6 +4,8 @@ export interface IOrganization {
     name: string;
     slug: string;
     ownerId: mongoose.Types.ObjectId;
+    country: string;
+    currency: string;
 }
 
 const organizationSchema = new mongoose.Schema<IOrganization>({
@@ -20,6 +22,16 @@ const organizationSchema = new mongoose.Schema<IOrganization>({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
+    },
+    country: {
+        type: String,
+        required: true,
+        uppercase: true,
+    },
+    currency: {
+        type: String,
+        required: true,
+        uppercase: true,
     },
 }, {
     timestamps: true,

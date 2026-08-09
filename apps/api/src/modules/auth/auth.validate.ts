@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const signupSchema = z.object({
     organizationName: z.string().min(2),
+    country: z.string().length(2).transform((val) => val.toUpperCase()),
+    currency: z.string().length(3).transform((val) => val.toUpperCase()),
     name: z.string().min(3),
     email: z.string().email(),
     password: z.string().min(8),

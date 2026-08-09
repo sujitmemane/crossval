@@ -5,6 +5,7 @@ import User from "../users/user.model";
 export interface TokenPayload {
     sub: string;
     role: 'ADMIN' | 'CUSTOMER';
+    organizationId?: string;
 }
 
 export const generateAccessToken = (payload: TokenPayload) => {

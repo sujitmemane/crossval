@@ -19,3 +19,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
   next();
 };
+
+export const requireOrganization = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user?.organizationId) {
+    throw new AppError('No organization associated with this account', 403);
+  }
+
+  next();
+};
