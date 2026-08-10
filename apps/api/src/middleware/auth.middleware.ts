@@ -3,10 +3,14 @@ import { AppError } from "../lib/errors";
 import { verifyAccessToken, TokenPayload } from "../modules/auth/auth.utils";
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization || '';
-  const [scheme, token] = authHeader.split(' ');
+  const cookieToken = req.cookies?.accessToken as string | undefined;
 
-  if (scheme !== 'Bearer' || !token) {
+  const authHeader = req.headers.authorization || '';
+  const [scheme, headerToken] = authHeader.split(' ');
+  const bearerToken = scheme === 'Bearer' ? headerToken : undefined;
+
+  const token = cookieToken || bearerToken;
+  if (!token) {
     throw new AppError('Authentication token missing', 401);
   }
 

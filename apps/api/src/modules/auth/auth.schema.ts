@@ -16,7 +16,7 @@ export const signinSchema = z.object({
 });
 
 export const refreshTokenSchema = z.object({
-    refreshToken: z.string().min(1),
+    refreshToken: z.string().min(1).optional(),
 });
 
 export const forgotPasswordSchema = z.object({

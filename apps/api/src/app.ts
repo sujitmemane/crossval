@@ -1,4 +1,6 @@
 import express ,{ Request, Response } from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import authRouter from './modules/auth/auth.routes';
 import itemRouter from './modules/items/item.routes';
 import orderRouter from './modules/orders/order.routes';
@@ -7,9 +9,12 @@ import transactionRouter from './modules/transactions/transaction.routes';
 import userRouter from './modules/users/user.routes';
 import organizationRouter from './modules/organizations/organization.routes';
 import { errorHandler } from './middleware/error.middleware';
+import { env } from './config/env';
 
 const app = express();
 
+app.use(cors({ origin: env.frontendUrl, credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 
 app.get('/', (req: Request, res: Response<{ message: string }>) => {
