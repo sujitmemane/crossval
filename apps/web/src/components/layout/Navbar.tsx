@@ -8,11 +8,11 @@ export function Navbar() {
 
   return (
     <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-6">
-      <Link to={paths.home} className="text-sm font-semibold text-slate-900 md:hidden">
+      <Link to={paths.dashboard.home} className="text-sm font-semibold text-slate-900 md:hidden">
         Settle
       </Link>
       <div className="ml-auto flex items-center gap-4">
-        <Link to={paths.profile} className="text-sm text-slate-600 hover:text-slate-900">
+        <Link to={paths.dashboard.profile} className="text-sm text-slate-600 hover:text-slate-900">
           <span className="font-medium text-slate-900">{user?.name}</span>
           <span className="ml-1 text-slate-400">({user?.role})</span>
         </Link>

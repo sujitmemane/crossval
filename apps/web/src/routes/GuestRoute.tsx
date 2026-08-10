@@ -15,7 +15,7 @@ export function GuestRoute() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={paths.home} replace />;
+    return <Navigate to={paths.dashboard.home} replace />;
   }
 
   return <Outlet />;

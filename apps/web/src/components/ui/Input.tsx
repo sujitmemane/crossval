@@ -1,11 +1,12 @@
-import type { InputHTMLAttributes } from 'react';
+import type { InputHTMLAttributes, Ref } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  ref?: Ref<HTMLInputElement>;
 }
 
-export function Input({ label, error, id, className = '', name, ...rest }: InputProps) {
+export function Input({ label, error, id, className = '', name, ref, ...rest }: InputProps) {
   const inputId = id ?? name;
 
   return (
@@ -16,6 +17,7 @@ export function Input({ label, error, id, className = '', name, ...rest }: Input
         </label>
       ) : null}
       <input
+        ref={ref}
         id={inputId}
         name={name}
         className={`rounded-md border px-3 py-2 text-sm outline-none transition-colors focus:border-slate-900 ${

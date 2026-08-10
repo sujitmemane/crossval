@@ -21,11 +21,11 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={paths.signIn} state={{ from: location }} replace />;
+    return <Navigate to={paths.auth.signIn} state={{ from: location }} replace />;
   }
 
   if (roles && (!user || !roles.includes(user.role))) {
-    return <Navigate to={paths.home} replace />;
+    return <Navigate to={paths.dashboard.home} replace />;
   }
 
   return <Outlet />;

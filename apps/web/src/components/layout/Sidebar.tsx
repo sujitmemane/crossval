@@ -9,13 +9,13 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: paths.home, label: 'Dashboard' },
-  { to: paths.orders, label: 'Orders' },
-  { to: paths.items, label: 'Items' },
-  { to: paths.transactions, label: 'Transactions' },
-  { to: paths.users, label: 'Users', adminOnly: true },
-  { to: paths.auditLogs, label: 'Audit Logs' },
-  { to: paths.organization, label: 'Organization' },
+  { to: paths.dashboard.home, label: 'Dashboard' },
+  { to: paths.dashboard.orders, label: 'Orders' },
+  { to: paths.dashboard.items, label: 'Items' },
+  { to: paths.dashboard.transactions, label: 'Transactions' },
+  { to: paths.dashboard.users, label: 'Users', adminOnly: true },
+  { to: paths.dashboard.auditLogs, label: 'Audit Logs' },
+  { to: paths.dashboard.organization, label: 'Organization' },
 ];
 
 export function Sidebar() {
@@ -31,7 +31,7 @@ export function Sidebar() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === paths.home}
+              end={item.to === paths.dashboard.home}
               className={({ isActive }) =>
                 `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'

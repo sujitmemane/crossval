@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, ApiError } from '../../lib/api-client';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,12 +9,6 @@ import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import type { Organization } from '../../types/organization';
-
-interface OrganizationFormState {
-  name: string;
-  country: string;
-  currency: string;
-}
 
 export function OrganizationPage() {
   useDocumentTitle('Organization');
@@ -47,64 +40,75 @@ export function OrganizationPage() {
   );
 }
 
+interface OrganizationFormValues {
+  name: string;
+  country: string;
+  currency: string;
+}
+
 function OrganizationForm({ organization, isAdmin }: { organization: Organization; isAdmin: boolean }) {
   const queryClient = useQueryClient();
 
-  const [form, setForm] = useState<OrganizationFormState>({
-    name: organization.name,
-    country: organization.country,
-    currency: organization.currency,
+  const {
+    register,
+    handleSubmit,
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<OrganizationFormValues>({
+    defaultValues: {
+      name: organization.name,
+      country: organization.country,
+      currency: organization.currency,
+    },
   });
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   const updateOrganization = useMutation({
-    mutationFn: (payload: OrganizationFormState) =>
+    mutationFn: (payload: OrganizationFormValues) =>
       apiFetch<Organization>('/organizations/me', { method: 'PATCH', data: payload }).then((res) => res.data),
     onSuccess: (updated) => {
       queryClient.setQueryData(['organization'], updated);
     },
   });
 
-  const updateField = (field: keyof OrganizationFormState) => (event: ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }));
-  };
-
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setSaveError(null);
+  const onSubmit = handleSubmit(async (values) => {
+    clearErrors('root');
     try {
-      await updateOrganization.mutateAsync(form);
+      await updateOrganization.mutateAsync(values);
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : 'Something went wrong');
+      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
     }
-  };
+  });
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-md flex-col gap-4">
-      <Input label="Name" value={form.name} onChange={updateField('name')} disabled={!isAdmin} required />
+    <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
+      <Input
+        label="Name"
+        disabled={!isAdmin}
+        error={errors.name?.message}
+        {...register('name', { required: 'Name is required' })}
+      />
       <div className="grid grid-cols-2 gap-3">
         <Input
           label="Country (ISO-2)"
-          value={form.country}
-          onChange={updateField('country')}
           disabled={!isAdmin}
           maxLength={2}
-          required
+          error={errors.country?.message}
+          {...register('country', { required: 'Required', minLength: 2, maxLength: 2 })}
         />
         <Input
           label="Currency (ISO-3)"
-          value={form.currency}
-          onChange={updateField('currency')}
           disabled={!isAdmin}
           maxLength={3}
-          required
+          error={errors.currency?.message}
+          {...register('currency', { required: 'Required', minLength: 3, maxLength: 3 })}
         />
       </div>
 
-      {saveError ? <p className="text-sm text-red-600">{saveError}</p> : null}
+      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
 
       {isAdmin ? (
-        <Button type="submit" isLoading={updateOrganization.isPending} className="w-fit">
+        <Button type="submit" isLoading={isSubmitting} className="w-fit">
           Save changes
         </Button>
       ) : (

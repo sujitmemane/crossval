@@ -1,8 +1,9 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { GuestRoute } from './GuestRoute';
+import { paths } from './paths';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ItemsPage } from '../pages/items/ItemsPage';
 import { OrdersPage } from '../pages/orders/OrdersPage';
@@ -18,7 +19,9 @@ import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
 export const router = createBrowserRouter([
+  { path: '/', element: <Navigate to={paths.dashboard.home} replace /> },
   {
+    path: 'dashboard',
     element: <ProtectedRoute />,
     children: [
       {
@@ -40,6 +43,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: 'auth',
     element: <GuestRoute />,
     children: [
       {

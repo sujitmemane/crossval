@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { ApiError } from '../../lib/api-client';
 import { paths } from '../../routes/paths';
 
-interface SignUpFormState {
+interface SignUpFormValues {
   organizationName: string;
   country: string;
   currency: string;
@@ -17,44 +17,29 @@ interface SignUpFormState {
   password: string;
 }
 
-const initialState: SignUpFormState = {
-  organizationName: '',
-  country: '',
-  currency: '',
-  name: '',
-  email: '',
-  password: '',
-};
-
 export function SignUpPage() {
   useDocumentTitle('Create account');
   const { signUp } = useAuth();
-  const navigate = useNavigate();
+  const { toDashboard } = useAppNavigate();
 
-  const [form, setForm] = useState<SignUpFormState>(initialState);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormValues>();
 
-  const updateField = (field: keyof SignUpFormState) => (event: ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }));
-  };
-
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
+  const onSubmit = handleSubmit(async (values) => {
     try {
-      await signUp({ ...form, role: 'ADMIN' });
-      navigate(paths.home, { replace: true });
+      await signUp({ ...values, role: 'ADMIN' });
+      toDashboard({ replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setIsSubmitting(false);
+      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
     }
-  };
+  });
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
         <h2 className="text-base font-semibold text-slate-900">Create your organization</h2>
         <p className="text-sm text-slate-500">Get started with Settle.</p>
@@ -62,49 +47,41 @@ export function SignUpPage() {
 
       <Input
         label="Organization name"
-        name="organizationName"
-        value={form.organizationName}
-        onChange={updateField('organizationName')}
-        required
+        error={errors.organizationName?.message}
+        {...register('organizationName', { required: 'Organization name is required', minLength: 2 })}
       />
       <div className="grid grid-cols-2 gap-3">
         <Input
           label="Country (ISO-2)"
-          name="country"
-          value={form.country}
-          onChange={updateField('country')}
           maxLength={2}
-          required
+          error={errors.country?.message}
+          {...register('country', { required: ' Required', minLength: 2, maxLength: 2 })}
         />
         <Input
           label="Currency (ISO-3)"
-          name="currency"
-          value={form.currency}
-          onChange={updateField('currency')}
           maxLength={3}
-          required
+          error={errors.currency?.message}
+          {...register('currency', { required: 'Required', minLength: 3, maxLength: 3 })}
         />
       </div>
-      <Input label="Your name" name="name" value={form.name} onChange={updateField('name')} required />
+      <Input label="Your name" error={errors.name?.message} {...register('name', { required: 'Name is required' })} />
       <Input
         label="Email"
         type="email"
-        name="email"
-        value={form.email}
-        onChange={updateField('email')}
-        required
+        error={errors.email?.message}
+        {...register('email', { required: 'Email is required' })}
       />
       <Input
         label="Password"
         type="password"
-        name="password"
-        value={form.password}
-        onChange={updateField('password')}
-        minLength={8}
-        required
+        error={errors.password?.message}
+        {...register('password', {
+          required: 'Password is required',
+          minLength: { value: 8, message: 'Must be at least 8 characters' },
+        })}
       />
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
 
       <Button type="submit" isLoading={isSubmitting} className="w-full">
         Create account
@@ -112,7 +89,7 @@ export function SignUpPage() {
 
       <p className="text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <Link to={paths.signIn} className="font-medium text-slate-900 hover:underline">
+        <Link to={paths.auth.signIn} className="font-medium text-slate-900 hover:underline">
           Sign in
         </Link>
       </p>

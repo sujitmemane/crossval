@@ -11,7 +11,7 @@ export function NotFoundPage() {
       <p className="text-sm font-medium text-slate-400">404</p>
       <h1 className="text-xl font-semibold text-slate-900">Page not found</h1>
       <p className="max-w-sm text-sm text-slate-500">The page you're looking for doesn't exist or may have moved.</p>
-      <Link to={paths.home}>
+      <Link to={paths.dashboard.home}>
         <Button variant="secondary">Back to dashboard</Button>
       </Link>
     </div>
