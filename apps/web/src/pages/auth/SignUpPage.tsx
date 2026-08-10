@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
@@ -20,21 +21,25 @@ interface SignUpFormValues {
 export function SignUpPage() {
   useDocumentTitle('Create account');
   const { signUp } = useAuth();
-  const { toDashboard } = useAppNavigate();
+  const navigate = useAppNavigate();
 
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFormValues>();
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await signUp({ ...values, role: 'ADMIN' });
-      toDashboard({ replace: true });
+      const response = await signUp({ ...values, role: 'ADMIN' });
+      if (response.success) {
+        toast.success(response.message);
+        navigate((routes) => routes.dashboard.home, { replace: true });
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
-      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
+      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
   });
 
@@ -55,7 +60,7 @@ export function SignUpPage() {
           label="Country (ISO-2)"
           maxLength={2}
           error={errors.country?.message}
-          {...register('country', { required: ' Required', minLength: 2, maxLength: 2 })}
+          {...register('country', { required: 'Required', minLength: 2, maxLength: 2 })}
         />
         <Input
           label="Currency (ISO-3)"
@@ -80,8 +85,6 @@ export function SignUpPage() {
           minLength: { value: 8, message: 'Must be at least 8 characters' },
         })}
       />
-
-      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
 
       <Button type="submit" isLoading={isSubmitting} className="w-full">
         Create account

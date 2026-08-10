@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { authApi } from '../../api/auth.api';
+import { ApiError } from '../../lib/api-client';
 import { paths } from '../../routes/paths';
 
 interface ForgotPasswordFormValues {
@@ -19,17 +22,23 @@ export function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormValues>();
 
+  const forgotPassword = useMutation({ mutationFn: authApi.forgotPassword });
+
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await apiFetch('/auth/forgot-password', { method: 'POST', data: values, skipAuth: true });
-      setSentEmail(values.email);
-      setIsSent(true);
+      const response = await forgotPassword.mutateAsync(values);
+      if (response.success) {
+        toast.success(response.message);
+        setSentEmail(values.email);
+        setIsSent(true);
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
-      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
+      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
   });
 
@@ -58,8 +67,6 @@ export function ForgotPasswordPage() {
         error={errors.email?.message}
         {...register('email', { required: 'Email is required' })}
       />
-
-      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
 
       <Button type="submit" isLoading={isSubmitting} className="w-full">
         Send reset link

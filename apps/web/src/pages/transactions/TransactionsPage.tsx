@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { ordersApi } from '../../api/orders.api';
+import { transactionsApi } from '../../api/transactions.api';
+import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
-import type { OrdersResponse } from '../../types/order';
-import type { Transaction } from '../../types/transaction';
 
 export function TransactionsPage() {
   useDocumentTitle('Transactions');
@@ -15,12 +15,12 @@ export function TransactionsPage() {
 
   const ordersQuery = useQuery({
     queryKey: ['orders', 'picker'],
-    queryFn: () => apiFetch<OrdersResponse>('/orders', { params: { limit: 100 } }).then((res) => res.data),
+    queryFn: () => ordersApi.list({ limit: 100 }).then((res) => res.data),
   });
 
   const transactionsQuery = useQuery({
     queryKey: ['transactions', orderId],
-    queryFn: () => apiFetch<Transaction[]>('/transactions', { params: { orderId } }).then((res) => res.data),
+    queryFn: () => transactionsApi.listByOrder(orderId).then((res) => res.data),
     enabled: orderId.length > 0,
   });
 

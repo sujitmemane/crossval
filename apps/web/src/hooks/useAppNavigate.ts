@@ -5,8 +5,5 @@ import { paths } from '../routes/paths';
 export function useAppNavigate() {
   const navigate = useNavigate();
 
-  return {
-    toDashboard: (options?: NavigateOptions) => navigate(paths.dashboard.home, options),
-    toSignIn: (options?: NavigateOptions) => navigate(paths.auth.signIn, options),
-  };
+  return (selector: (routes: typeof paths) => string, options?: NavigateOptions) => navigate(selector(paths), options);
 }

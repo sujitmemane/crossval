@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { ordersApi } from '../../api/orders.api';
+import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
-import type { OrderStatus, OrdersResponse } from '../../types/order';
+import type { OrderStatus } from '../../types/order';
 
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger';
 
@@ -21,7 +22,7 @@ export function OrdersPage() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['orders'],
-    queryFn: () => apiFetch<OrdersResponse>('/orders').then((res) => res.data),
+    queryFn: () => ordersApi.list().then((res) => res.data),
   });
 
   return (

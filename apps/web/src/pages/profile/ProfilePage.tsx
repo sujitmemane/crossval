@@ -1,32 +1,32 @@
 import { useForm } from 'react-hook-form';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import { usersApi } from '../../api/users.api';
+import { ApiError } from '../../lib/api-client';
+import { useAuth } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import type { AuthUser } from '../../types/auth';
+import type { ChangePasswordPayload, UpdateProfilePayload } from '../../types/user';
 
 export function ProfilePage() {
   useDocumentTitle('Profile');
-
-  const { data: me, isLoading } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => apiFetch<AuthUser>('/users/me').then((res) => res.data),
-  });
+  const { user } = useAuth();
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title="Profile" description="Manage your personal account details." />
 
-      {isLoading || !me ? (
+      {!user ? (
         <div className="flex justify-center py-16">
           <Spinner size="lg" />
         </div>
       ) : (
         <>
-          <ProfileDetailsForm key={me._id} me={me} />
+          <ProfileDetailsForm key={user._id} me={user} />
           <PasswordForm />
         </>
       )}
@@ -34,30 +34,30 @@ export function ProfilePage() {
   );
 }
 
-interface ProfileDetailsFormValues {
-  name: string;
-  email: string;
-}
-
 function ProfileDetailsForm({ me }: { me: AuthUser }) {
+  const { setUser } = useAuth();
+
   const {
     register,
     handleSubmit,
-    setError,
-    clearErrors,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
-  } = useForm<ProfileDetailsFormValues>({ defaultValues: { name: me.name, email: me.email } });
+    formState: { errors, isSubmitting },
+  } = useForm<UpdateProfilePayload>({ defaultValues: { name: me.name, email: me.email } });
 
   const updateProfile = useMutation({
-    mutationFn: (payload: ProfileDetailsFormValues) => apiFetch<AuthUser>('/users/me', { method: 'PATCH', data: payload }),
+    mutationFn: (payload: UpdateProfilePayload) => usersApi.updateMe(payload),
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    clearErrors('root');
     try {
-      await updateProfile.mutateAsync(values);
+      const response = await updateProfile.mutateAsync(values);
+      if (response.success) {
+        setUser(response.data);
+        toast.success(response.message);
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
-      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
+      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
   });
 
@@ -71,8 +71,6 @@ function ProfileDetailsForm({ me }: { me: AuthUser }) {
         error={errors.email?.message}
         {...register('email', { required: 'Email is required' })}
       />
-      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
-      {isSubmitSuccessful && !errors.root ? <p className="text-sm text-emerald-600">Profile updated.</p> : null}
       <Button type="submit" isLoading={isSubmitting} className="w-fit">
         Save profile
       </Button>
@@ -80,32 +78,29 @@ function ProfileDetailsForm({ me }: { me: AuthUser }) {
   );
 }
 
-interface PasswordFormValues {
-  currentPassword: string;
-  newPassword: string;
-}
-
 function PasswordForm() {
   const {
     register,
     handleSubmit,
-    setError,
-    clearErrors,
     reset,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
-  } = useForm<PasswordFormValues>();
+    formState: { errors, isSubmitting },
+  } = useForm<ChangePasswordPayload>();
 
   const changePassword = useMutation({
-    mutationFn: (payload: PasswordFormValues) => apiFetch('/users/me/password', { method: 'PATCH', data: payload }),
+    mutationFn: (payload: ChangePasswordPayload) => usersApi.changePassword(payload),
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    clearErrors('root');
     try {
-      await changePassword.mutateAsync(values);
-      reset({ currentPassword: '', newPassword: '' }, { keepIsSubmitSuccessful: true });
+      const response = await changePassword.mutateAsync(values);
+      if (response.success) {
+        toast.success(response.message);
+        reset();
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
-      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
+      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
   });
 
@@ -127,8 +122,6 @@ function PasswordForm() {
           minLength: { value: 8, message: 'Must be at least 8 characters' },
         })}
       />
-      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
-      {isSubmitSuccessful && !errors.root ? <p className="text-sm text-emerald-600">Password changed.</p> : null}
       <Button type="submit" isLoading={isSubmitting} className="w-fit">
         Update password
       </Button>

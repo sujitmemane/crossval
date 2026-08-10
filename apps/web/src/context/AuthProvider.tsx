@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { apiFetch } from '../lib/api-client';
-import type { AuthSession, AuthUser, SignInPayload, SignUpPayload } from '../types/auth';
+import { useMutation } from '@tanstack/react-query';
+import { authApi } from '../api/auth.api';
+import { usersApi } from '../api/users.api';
+import type { AuthUser, SignInPayload, SignUpPayload } from '../types/auth';
 import { AuthContext } from './AuthContext';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -9,33 +11,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch<AuthUser>('/users/me')
+    usersApi
+      .getMe()
       .then((response) => setUser(response.data))
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);
 
-  const signIn = async (payload: SignInPayload) => {
-    const response = await apiFetch<AuthSession>('/auth/sign-in', {
-      method: 'POST',
-      data: payload,
-      skipAuth: true,
-    });
-    setUser(response.data.user);
-  };
+  const signInMutation = useMutation({
+    mutationFn: authApi.signIn,
+    onSuccess: (response) => setUser(response.data.user),
+  });
 
-  const signUp = async (payload: SignUpPayload) => {
-    const response = await apiFetch<AuthSession>('/auth/sign-up', {
-      method: 'POST',
-      data: payload,
-      skipAuth: true,
-    });
-    setUser(response.data.user);
-  };
+  const signUpMutation = useMutation({
+    mutationFn: authApi.signUp,
+    onSuccess: (response) => setUser(response.data.user),
+  });
+
+  const signOutMutation = useMutation({
+    mutationFn: authApi.signOut,
+  });
+
+  const signIn = (payload: SignInPayload) => signInMutation.mutateAsync(payload);
+
+  const signUp = (payload: SignUpPayload) => signUpMutation.mutateAsync(payload);
 
   const signOut = async () => {
     try {
-      await apiFetch('/auth/sign-out', { method: 'POST', skipAuth: true });
+      await signOutMutation.mutateAsync();
     } finally {
       setUser(null);
     }
@@ -48,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    setUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

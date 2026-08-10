@@ -10,14 +10,6 @@ export interface ApiEnvelope<T> {
   errors?: Record<string, string>;
 }
 
-declare module 'axios' {
-  interface InternalAxiosRequestConfig {
-    /** Skip the refresh-and-retry-on-401 flow (e.g. sign-in/sign-up, where a 401 is a real credential error). */
-    skipAuth?: boolean;
-    _retry?: boolean;
-  }
-}
-
 export class ApiError extends Error {
   status: number;
   errors?: Record<string, string>;
@@ -29,6 +21,17 @@ export class ApiError extends Error {
     this.errors = errors;
   }
 }
+
+
+
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    skipAuth?: boolean;
+    _retry?: boolean;
+  }
+}
+
+
 
 export const apiClient = axios.create({
   baseURL: API_URL,

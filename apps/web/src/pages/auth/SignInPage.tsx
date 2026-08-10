@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Button } from '../../components/ui/Button';
@@ -12,23 +13,24 @@ export function SignInPage() {
   useDocumentTitle('Sign in');
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<SignInPayload>();
 
-  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? paths.dashboard.home;
-
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await signIn(values);
-      navigate(from, { replace: true });
+      const response = await signIn(values);
+      if (response.success) {
+        toast.success(response.message);
+        navigate(paths.dashboard.home, { replace: true });
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
-      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
+      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
   });
 
@@ -54,8 +56,6 @@ export function SignInPage() {
           minLength: { value: 8, message: 'Must be at least 8 characters' },
         })}
       />
-
-      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
 
       <Button type="submit" isLoading={isSubmitting} className="w-full">
         Sign in

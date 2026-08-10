@@ -1,10 +1,13 @@
 import { useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { authApi } from '../../api/auth.api';
+import { ApiError } from '../../lib/api-client';
 import { paths } from '../../routes/paths';
 
 interface ResetPasswordFormValues {
@@ -14,27 +17,33 @@ interface ResetPasswordFormValues {
 export function ResetPasswordPage() {
   useDocumentTitle('Reset password');
   const [searchParams] = useSearchParams();
-  const { toSignIn } = useAppNavigate();
+  const navigate = useAppNavigate();
   const token = searchParams.get('token') ?? '';
 
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordFormValues>();
 
+  const resetPassword = useMutation({ mutationFn: authApi.resetPassword });
+
   const onSubmit = handleSubmit(async (values) => {
     if (!token) {
-      setError('root', { message: 'This reset link is invalid or has expired.' });
+      toast.error('This reset link is invalid or has expired.');
       return;
     }
 
     try {
-      await apiFetch('/auth/reset-password', { method: 'POST', data: { token, ...values }, skipAuth: true });
-      toSignIn({ replace: true });
+      const response = await resetPassword.mutateAsync({ token, ...values });
+      if (response.success) {
+        toast.success(response.message);
+        navigate((routes) => routes.auth.signIn, { replace: true });
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
-      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
+      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
   });
 
@@ -54,8 +63,6 @@ export function ResetPasswordPage() {
           minLength: { value: 8, message: 'Must be at least 8 characters' },
         })}
       />
-
-      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
 
       <Button type="submit" isLoading={isSubmitting} className="w-full">
         Reset password

@@ -1,18 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { auditLogsApi } from '../../api/audit-logs.api';
+import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
-import type { AuditLogsResponse } from '../../types/audit-log';
 
 export function AuditLogsPage() {
   useDocumentTitle('Audit Logs');
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['audit-logs'],
-    queryFn: () => apiFetch<AuditLogsResponse>('/audit-logs').then((res) => res.data),
+    queryFn: () => auditLogsApi.list().then((res) => res.data),
   });
 
   return (

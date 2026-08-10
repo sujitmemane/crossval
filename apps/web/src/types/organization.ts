@@ -8,3 +8,9 @@ export interface Organization {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface UpdateOrganizationPayload {
+  name: string;
+  country: string;
+  currency: string;
+}

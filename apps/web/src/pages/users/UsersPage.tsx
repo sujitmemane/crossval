@@ -1,18 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { usersApi } from '../../api/users.api';
+import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
-import type { UsersResponse } from '../../types/user';
 
 export function UsersPage() {
   useDocumentTitle('Users');
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['users'],
-    queryFn: () => apiFetch<UsersResponse>('/users').then((res) => res.data),
+    queryFn: () => usersApi.list().then((res) => res.data),
   });
 
   return (

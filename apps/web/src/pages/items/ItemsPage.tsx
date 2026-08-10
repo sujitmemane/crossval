@@ -1,18 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { itemsApi } from '../../api/items.api';
+import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
-import type { ItemsResponse } from '../../types/item';
 
 export function ItemsPage() {
   useDocumentTitle('Items');
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['items'],
-    queryFn: () => apiFetch<ItemsResponse>('/items').then((res) => res.data),
+    queryFn: () => itemsApi.list().then((res) => res.data),
   });
 
   return (

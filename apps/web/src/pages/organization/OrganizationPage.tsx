@@ -1,6 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import toast from 'react-hot-toast';
+import { organizationsApi } from '../../api/organizations.api';
+import { ApiError } from '../../lib/api-client';
 import { useAuth } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -8,7 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { EmptyState } from '../../components/ui/EmptyState';
-import type { Organization } from '../../types/organization';
+import type { Organization, UpdateOrganizationPayload } from '../../types/organization';
 
 export function OrganizationPage() {
   useDocumentTitle('Organization');
@@ -17,7 +19,7 @@ export function OrganizationPage() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['organization'],
-    queryFn: () => apiFetch<Organization>('/organizations/me').then((res) => res.data),
+    queryFn: () => organizationsApi.getMe().then((res) => res.data),
   });
 
   return (
@@ -40,22 +42,14 @@ export function OrganizationPage() {
   );
 }
 
-interface OrganizationFormValues {
-  name: string;
-  country: string;
-  currency: string;
-}
-
 function OrganizationForm({ organization, isAdmin }: { organization: Organization; isAdmin: boolean }) {
   const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
-    setError,
-    clearErrors,
     formState: { errors, isSubmitting },
-  } = useForm<OrganizationFormValues>({
+  } = useForm<UpdateOrganizationPayload>({
     defaultValues: {
       name: organization.name,
       country: organization.country,
@@ -64,19 +58,20 @@ function OrganizationForm({ organization, isAdmin }: { organization: Organizatio
   });
 
   const updateOrganization = useMutation({
-    mutationFn: (payload: OrganizationFormValues) =>
-      apiFetch<Organization>('/organizations/me', { method: 'PATCH', data: payload }).then((res) => res.data),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(['organization'], updated);
-    },
+    mutationFn: (payload: UpdateOrganizationPayload) => organizationsApi.updateMe(payload),
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    clearErrors('root');
     try {
-      await updateOrganization.mutateAsync(values);
+      const response = await updateOrganization.mutateAsync(values);
+      if (response.success) {
+        queryClient.setQueryData(['organization'], response.data);
+        toast.success(response.message);
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
-      setError('root', { message: err instanceof ApiError ? err.message : 'Something went wrong' });
+      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
   });
 
@@ -104,8 +99,6 @@ function OrganizationForm({ organization, isAdmin }: { organization: Organizatio
           {...register('currency', { required: 'Required', minLength: 3, maxLength: 3 })}
         />
       </div>
-
-      {errors.root ? <p className="text-sm text-red-600">{errors.root.message}</p> : null}
 
       {isAdmin ? (
         <Button type="submit" isLoading={isSubmitting} className="w-fit">
