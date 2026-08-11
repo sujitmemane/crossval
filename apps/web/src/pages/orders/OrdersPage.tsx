@@ -46,12 +46,14 @@ export function OrdersPage() {
   const money = (value: number) => formatCurrency(value, currency);
 
   const [paymentModal, setPaymentModal] = useState<{ order: OrderWithStatus; type: TransactionType } | null>(null);
-  const [detailsOrder, setDetailsOrder] = useState<OrderWithStatus | null>(null);
+  const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['orders'],
     queryFn: () => ordersApi.list().then((res) => res.data),
   });
+
+  const detailsOrder = data?.orders.find((order) => order._id === detailsOrderId) ?? null;
 
   const openPaymentModal = (order: OrderWithStatus, type: TransactionType) => {
     setPaymentModal({ order, type });
@@ -104,7 +106,7 @@ export function OrdersPage() {
                   return (
                     <tr
                       key={order._id}
-                      onClick={() => setDetailsOrder(order)}
+                      onClick={() => setDetailsOrderId(order._id)}
                       className={`cursor-pointer transition-colors ${
                         isSelected ? 'bg-surfaceMuted/70' : 'hover:bg-surfaceMuted/40'
                       }`}
@@ -146,7 +148,7 @@ export function OrdersPage() {
         />
       ) : null}
 
-      {detailsOrder ? <OrderDetailsDrawer order={detailsOrder} onClose={() => setDetailsOrder(null)} /> : null}
+      {detailsOrder ? <OrderDetailsDrawer order={detailsOrder} onClose={() => setDetailsOrderId(null)} /> : null}
     </div>
   );
 }
