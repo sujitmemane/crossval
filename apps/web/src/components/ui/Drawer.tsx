@@ -5,9 +5,10 @@ interface DrawerProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  footer?: ReactNode;
 }
 
-export function Drawer({ title, onClose, children }: DrawerProps) {
+export function Drawer({ title, onClose, children, footer }: DrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export function Drawer({ title, onClose, children }: DrawerProps) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        {footer ? <div className="border-t border-border px-5 py-4">{footer}</div> : null}
       </div>
     </div>
   );

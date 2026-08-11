@@ -7,8 +7,11 @@ import { auditLogsApi } from '../../api/audit-logs.api';
 import { Drawer } from '../../components/ui/Drawer';
 import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
+import { PaymentModal } from './PaymentModal';
+import { OrderRowActions } from './OrderRowActions';
 import type { OrderStatus, OrderWithStatus } from '../../types/order';
 import type { AuditLog } from '../../types/audit-log';
+import type { TransactionType } from '../../types/transaction';
 import { useOrganization } from '../../hooks/useOrganization';
 import { formatCurrency } from '../../lib/format-currency';
 
@@ -54,6 +57,7 @@ interface OrderDetailsDrawerProps {
 
 export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [paymentType, setPaymentType] = useState<TransactionType | null>(null);
   const { data: organization } = useOrganization();
   const currency = organization?.currency ?? 'USD';
   const money = (value: number) => formatCurrency(value, currency);
@@ -83,7 +87,16 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
   const balanceDue = order.totalAmount - order.amountPaid;
 
   return (
-    <Drawer title={`Order #${order._id.slice(-6).toUpperCase()}`} onClose={onClose}>
+    <>
+      <Drawer
+        title={`Order #${order._id.slice(-6).toUpperCase()}`}
+        onClose={onClose}
+        footer={
+          <div className="flex justify-end">
+            <OrderRowActions order={order} onPayment={(_order, type) => setPaymentType(type)} />
+          </div>
+        }
+      >
       <div className="flex flex-col gap-7">
         <div className="flex items-center gap-2">
           <Badge tone={statusTone[order.status]}>{order.status.replaceAll('_', ' ')}</Badge>
@@ -133,14 +146,19 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
               )}
             </div>
 
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Due date</p>
+              <p className="text-sm text-foreground">{new Date(order.dueDate).toLocaleDateString()}</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted">Due date</p>
-                <p className="text-foreground">{new Date(order.dueDate).toLocaleDateString()}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Created at</p>
+                <p className="text-foreground">{new Date(order.createdAt).toLocaleString()}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted">Created</p>
-                <p className="text-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Updated at</p>
+                <p className="text-foreground">{new Date(order.updatedAt).toLocaleString()}</p>
               </div>
             </div>
 
@@ -244,6 +262,11 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
           </ul>
         )}
       </div>
-    </Drawer>
+      </Drawer>
+
+      {paymentType ? (
+        <PaymentModal order={order} type={paymentType} onClose={() => setPaymentType(null)} />
+      ) : null}
+    </>
   );
 }
