@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api-client';
-import type { AuthUser } from '../types/auth';
+import type { AuthUser, UserRole } from '../types/auth';
 import type {
   ChangePasswordPayload,
   CreateUserPayload,
@@ -17,7 +17,7 @@ export const usersApi = {
   changePassword: (payload: ChangePasswordPayload) =>
     apiFetch('/users/me/password', { method: 'PATCH', data: payload }),
 
-  list: () => apiFetch<UsersResponse>('/users'),
+  list: (params?: { role?: UserRole }) => apiFetch<UsersResponse>('/users', { params }),
 
   getById: (id: string) => apiFetch<OrgUser>(`/users/${id}`),
 

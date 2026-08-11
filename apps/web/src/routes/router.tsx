@@ -8,11 +8,10 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ItemsPage } from '../pages/items/ItemsPage';
 import { ItemFormPage } from '../pages/items/ItemFormPage';
 import { OrdersPage } from '../pages/orders/OrdersPage';
-import { TransactionsPage } from '../pages/transactions/TransactionsPage';
+import { OrderFormPage } from '../pages/orders/OrderFormPage';
 import { UsersPage } from '../pages/users/UsersPage';
 import { UserFormPage } from '../pages/users/UserFormPage';
 import { OrganizationPage } from '../pages/organization/OrganizationPage';
-import { AuditLogsPage } from '../pages/audit-logs/AuditLogsPage';
 import { ProfilePage } from '../pages/profile/ProfilePage';
 import { SignInPage } from '../pages/auth/SignInPage';
 import { SignUpPage } from '../pages/auth/SignUpPage';
@@ -31,11 +30,11 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           { path: 'orders', element: <OrdersPage /> },
+          { path: 'orders/new', element: <OrderFormPage /> },
+          { path: 'orders/:id/edit', element: <OrderFormPage /> },
           { path: 'items', element: <ItemsPage /> },
           { path: 'items/new', element: <ItemFormPage /> },
           { path: 'items/:id/edit', element: <ItemFormPage /> },
-          { path: 'transactions', element: <TransactionsPage /> },
-          { path: 'audit-logs', element: <AuditLogsPage /> },
           { path: 'organization', element: <OrganizationPage /> },
           { path: 'profile', element: <ProfilePage /> },
           {

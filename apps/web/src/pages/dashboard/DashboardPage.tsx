@@ -14,13 +14,7 @@ interface QuickLink {
 const quickLinks: QuickLink[] = [
   { to: paths.dashboard.orders, title: 'Orders', description: 'Track dues and payment status across customer orders.' },
   { to: paths.dashboard.items, title: 'Items', description: 'Manage the products and services you sell.' },
-  {
-    to: paths.dashboard.transactions,
-    title: 'Transactions',
-    description: 'Record payments and refunds against an order.',
-  },
   { to: paths.dashboard.users, title: 'Users', description: 'Invite teammates and manage roles.', adminOnly: true },
-  { to: paths.dashboard.auditLogs, title: 'Audit Logs', description: 'Review the activity trail for every order.' },
 ];
 
 export function DashboardPage() {

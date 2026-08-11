@@ -29,3 +29,15 @@ export interface OrdersResponse {
   orders: OrderWithStatus[];
   pagination: PaginationMeta;
 }
+
+export interface CreateOrderPayload {
+  userId: string;
+  dueDate: string;
+  items: { itemId: string; quantity: number }[];
+}
+
+export interface UpdateOrderPayload {
+  userId?: string;
+  dueDate?: string;
+  items?: { itemId: string; quantity: number }[];
+}

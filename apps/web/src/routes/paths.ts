@@ -8,15 +8,15 @@ export const paths = {
   dashboard: {
     home: '/dashboard',
     orders: '/dashboard/orders',
+    ordersNew: '/dashboard/orders/new',
+    orderEdit: (id: string) => `/dashboard/orders/${id}/edit`,
     items: '/dashboard/items',
     itemsNew: '/dashboard/items/new',
     itemEdit: (id: string) => `/dashboard/items/${id}/edit`,
-    transactions: '/dashboard/transactions',
     users: '/dashboard/users',
     usersNew: '/dashboard/users/new',
     userEdit: (id: string) => `/dashboard/users/${id}/edit`,
     organization: '/dashboard/organization',
-    auditLogs: '/dashboard/audit-logs',
     profile: '/dashboard/profile',
   },
 } as const;

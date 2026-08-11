@@ -1,5 +1,3 @@
-import type { PaginationMeta } from './pagination';
-
 export type AuditAction =
   | 'ORDER_CREATED'
   | 'ORDER_ITEMS_UPDATED'
@@ -20,9 +18,4 @@ export interface AuditLog {
   action: AuditAction;
   metadata?: Record<string, unknown>;
   createdAt: string;
-}
-
-export interface AuditLogsResponse {
-  logs: AuditLog[];
-  pagination: PaginationMeta;
 }

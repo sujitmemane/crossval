@@ -13,3 +13,17 @@ export interface Transaction {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CreateTransactionPayload {
+  orderId: string;
+  amount: number;
+  type: TransactionType;
+  method?: TransactionMethod;
+  note?: string;
+  idempotencyKey: string;
+}
+
+export interface CreateTransactionResult {
+  transaction: Transaction;
+  orderStatus: string;
+}

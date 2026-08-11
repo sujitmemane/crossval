@@ -12,9 +12,7 @@ const navItems: NavItem[] = [
   { to: paths.dashboard.home, label: 'Dashboard' },
   { to: paths.dashboard.orders, label: 'Orders' },
   { to: paths.dashboard.items, label: 'Items' },
-  { to: paths.dashboard.transactions, label: 'Transactions' },
   { to: paths.dashboard.users, label: 'Users', adminOnly: true },
-  { to: paths.dashboard.auditLogs, label: 'Audit Logs' },
   { to: paths.dashboard.organization, label: 'Organization' },
 ];
 
