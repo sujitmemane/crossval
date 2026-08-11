@@ -9,6 +9,8 @@ export const paths = {
     home: '/dashboard',
     orders: '/dashboard/orders',
     items: '/dashboard/items',
+    itemsNew: '/dashboard/items/new',
+    itemEdit: (id: string) => `/dashboard/items/${id}/edit`,
     transactions: '/dashboard/transactions',
     users: '/dashboard/users',
     organization: '/dashboard/organization',

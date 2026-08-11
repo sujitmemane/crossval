@@ -18,3 +18,11 @@ export interface ItemsResponse {
   items: Item[];
   pagination: PaginationMeta;
 }
+
+export interface CreateItemPayload {
+  name: string;
+  description?: string;
+  quantity: number;
+  rate: number;
+  status?: ItemStatus;
+}

@@ -6,6 +6,7 @@ import { GuestRoute } from './GuestRoute';
 import { paths } from './paths';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ItemsPage } from '../pages/items/ItemsPage';
+import { ItemFormPage } from '../pages/items/ItemFormPage';
 import { OrdersPage } from '../pages/orders/OrdersPage';
 import { TransactionsPage } from '../pages/transactions/TransactionsPage';
 import { UsersPage } from '../pages/users/UsersPage';
@@ -30,6 +31,8 @@ export const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: 'orders', element: <OrdersPage /> },
           { path: 'items', element: <ItemsPage /> },
+          { path: 'items/new', element: <ItemFormPage /> },
+          { path: 'items/:id/edit', element: <ItemFormPage /> },
           { path: 'transactions', element: <TransactionsPage /> },
           { path: 'audit-logs', element: <AuditLogsPage /> },
           { path: 'organization', element: <OrganizationPage /> },

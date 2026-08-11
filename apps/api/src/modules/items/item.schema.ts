@@ -13,6 +13,7 @@ export const updateItemSchema = z.object({
     description: z.string().optional(),
     rate: z.number().min(0).optional(),
     status: z.enum(['AVAILABLE', 'UNAVAILABLE']).optional(),
+    quantity: z.number().min(0).optional(),
 });
 
 export const getItemsSchema = z.object({

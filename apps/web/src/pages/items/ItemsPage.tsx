@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { itemsApi } from '../../api/items.api';
 import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -6,6 +7,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
+import { paths } from '../../routes/paths';
 
 export function ItemsPage() {
   useDocumentTitle('Items');
@@ -17,7 +19,18 @@ export function ItemsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Items" description="Manage the products and services your organization sells." />
+      <PageHeader
+        title="Items"
+        description="Manage the products and services your organization sells."
+        actions={
+          <Link
+            to={paths.dashboard.itemsNew}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
+          >
+            Add item
+          </Link>
+        }
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -36,6 +49,7 @@ export function ItemsPage() {
                 <th className="px-4 py-3">Rate</th>
                 <th className="px-4 py-3">Quantity</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -46,6 +60,14 @@ export function ItemsPage() {
                   <td className="px-4 py-3 text-slate-600">{item.quantity}</td>
                   <td className="px-4 py-3">
                     <Badge tone={item.status === 'AVAILABLE' ? 'success' : 'neutral'}>{item.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      to={paths.dashboard.itemEdit(item._id)}
+                      className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline"
+                    >
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}

@@ -24,6 +24,7 @@ export const getItems = async (
 };
 
 export const updateItem = async (organizationId: string, id: string, updates: Partial<IItem>) => {
+    console.log("update item", id, organizationId, updates);
     const item = await updateItemById(id, organizationId, updates);
     if (!item) throw new AppError('Item not found', 404);
     return success('Item updated successfully', item);
