@@ -105,7 +105,7 @@ function OrganizationForm({ organization, isAdmin }: { organization: Organizatio
           Save changes
         </Button>
       ) : (
-        <p className="text-sm text-slate-400">Only organization admins can edit these details.</p>
+        <p className="text-sm text-mutedForeground">Only organization admins can edit these details.</p>
       )}
     </form>
   );

@@ -46,8 +46,8 @@ export function SignUpPage() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Create your organization</h2>
-        <p className="text-sm text-slate-500">Get started with Settle.</p>
+        <h2 className="text-base font-semibold text-foreground">Create your organization</h2>
+        <p className="text-sm text-muted">Get started with Settle.</p>
       </div>
 
       <Input
@@ -90,9 +90,9 @@ export function SignUpPage() {
         Create account
       </Button>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-muted">
         Already have an account?{' '}
-        <Link to={paths.auth.signIn} className="font-medium text-slate-900 hover:underline">
+        <Link to={paths.auth.signIn} className="font-medium text-foreground hover:underline">
           Sign in
         </Link>
       </p>

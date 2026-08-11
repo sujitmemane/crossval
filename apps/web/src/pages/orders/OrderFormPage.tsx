@@ -146,12 +146,12 @@ export function OrderFormPage() {
       <form onSubmit={onSubmit} className="flex max-w-2xl flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label htmlFor="userId" className="text-sm font-medium text-slate-700">
+            <label htmlFor="userId" className="text-sm font-medium text-foreground">
               Customer
             </label>
             <select
               id="userId"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-slate-900"
+              className="rounded-md border border-borderInput bg-surfaceInput px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
               {...register('userId', { required: 'Customer is required' })}
             >
               <option value="">Select a customer</option>
@@ -163,7 +163,7 @@ export function OrderFormPage() {
             </select>
             {errors.userId ? <p className="text-xs text-red-600">{errors.userId.message}</p> : null}
             {customers.length === 0 ? (
-              <p className="text-xs text-slate-500">No customers yet. Add one from the Users page first.</p>
+              <p className="text-xs text-muted">No customers yet. Add one from the Users page first.</p>
             ) : null}
           </div>
 
@@ -176,14 +176,14 @@ export function OrderFormPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-slate-700">Items</p>
+          <p className="text-sm font-medium text-foreground">Items</p>
 
           {itemsLocked ? (
-            <p className="text-xs text-slate-500">This order is fully paid, so its items can no longer be changed.</p>
+            <p className="text-xs text-muted">This order is fully paid, so its items can no longer be changed.</p>
           ) : null}
 
           {items.length === 0 ? (
-            <p className="text-sm text-slate-500">No items yet. Add an item first.</p>
+            <p className="text-sm text-muted">No items yet. Add an item first.</p>
           ) : (
             fields.map((field, index) => {
               const currentItemId = watchedItems?.[index]?.itemId;
@@ -196,7 +196,7 @@ export function OrderFormPage() {
                   <div className="flex flex-1 flex-col gap-1">
                     <select
                       disabled={itemsLocked}
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                      className="rounded-md border border-borderInput bg-surfaceInput px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surfaceMuted disabled:text-mutedForeground"
                       {...register(`items.${index}.itemId`, { required: 'Required' })}
                     >
                       <option value="">Select an item</option>
@@ -226,7 +226,7 @@ export function OrderFormPage() {
                     />
                   </div>
 
-                  <p className="w-20 pt-2 text-right text-sm text-slate-600">{lineTotals[index]?.toFixed(2)}</p>
+                  <p className="w-20 pt-2 text-right text-sm text-muted">{lineTotals[index]?.toFixed(2)}</p>
 
                   <Button
                     type="button"
@@ -251,13 +251,13 @@ export function OrderFormPage() {
             Add item
           </Button>
           {!itemsLocked && items.length > 0 && !canAddMoreItems ? (
-            <p className="text-xs text-slate-500">All available items are already added.</p>
+            <p className="text-xs text-muted">All available items are already added.</p>
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-200 pt-3">
-          <p className="text-sm font-medium text-slate-700">Total</p>
-          <p className="text-sm font-semibold text-slate-900">{orderTotal.toFixed(2)}</p>
+        <div className="flex items-center justify-between border-t border-border pt-3">
+          <p className="text-sm font-medium text-foreground">Total</p>
+          <p className="text-sm font-semibold text-foreground">{orderTotal.toFixed(2)}</p>
         </div>
 
         <div className="flex items-center gap-2">

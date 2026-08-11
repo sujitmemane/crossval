@@ -136,15 +136,15 @@ Please sign in and change your password.`
       <div className="flex flex-col gap-6">
         <PageHeader title="User created" description="Copy these details and send them to the new teammate." />
 
-        <div className="flex max-w-md flex-col gap-4 rounded-lg border border-slate-200 p-4">
+        <div className="flex max-w-md flex-col gap-4 rounded-lg border border-border p-4">
           <div>
-            <p className="text-sm font-medium text-slate-700">Email</p>
-            <p className="text-sm text-slate-900">{createdCredentials.email}</p>
+            <p className="text-sm font-medium text-foreground">Email</p>
+            <p className="text-sm text-foreground">{createdCredentials.email}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-700">Temporary password</p>
+            <p className="text-sm font-medium text-foreground">Temporary password</p>
             <div className="mt-1 flex items-center gap-2">
-              <code className="flex-1 rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+              <code className="flex-1 rounded-md border border-borderInput bg-surfaceMuted px-3 py-2 text-sm text-foreground">
                 {createdCredentials.password}
               </code>
               <Button type="button" variant="secondary" onClick={() => copyToClipboard(createdCredentials.password, 'password')}>
@@ -152,19 +152,19 @@ Please sign in and change your password.`
               </Button>
             </div>
             {createdCredentials.role === 'ADMIN' ? (
-              <p className="mt-1 text-xs text-slate-500">This has also been emailed to them.</p>
+              <p className="mt-1 text-xs text-muted">This has also been emailed to them.</p>
             ) : (
-              <p className="mt-1 text-xs text-slate-500">This won't be shown again — copy it now.</p>
+              <p className="mt-1 text-xs text-muted">This won't be shown again — copy it now.</p>
             )}
           </div>
 
           <div>
-            <p className="text-sm font-medium text-slate-700">Message to send</p>
+            <p className="text-sm font-medium text-foreground">Message to send</p>
             <textarea
               readOnly
               rows={7}
               value={invitationMessage}
-              className="mt-1 w-full resize-none rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none"
+              className="mt-1 w-full resize-none rounded-md border border-borderInput bg-surfaceMuted px-3 py-2 text-sm text-foreground outline-none"
               onFocus={(e) => e.currentTarget.select()}
             />
             <Button
@@ -207,12 +207,12 @@ Please sign in and change your password.`
         />
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="role" className="text-sm font-medium text-slate-700">
+          <label htmlFor="role" className="text-sm font-medium text-foreground">
             Role
           </label>
           <select
             id="role"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-slate-900"
+            className="rounded-md border border-borderInput bg-surfaceInput px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
             {...register('role')}
           >
             <option value="CUSTOMER">Customer</option>

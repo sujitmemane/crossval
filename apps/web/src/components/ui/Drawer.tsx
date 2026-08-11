@@ -26,21 +26,21 @@ export function Drawer({ title, onClose, children }: DrawerProps) {
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className={`absolute inset-0 bg-slate-900/50 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-foreground/50 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
       <div
-        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-xl transition-transform duration-200 ${
+        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-surface shadow-xl transition-transform duration-200 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-slate-400 transition-colors hover:text-slate-600"
+            className="text-mutedForeground transition-colors hover:text-muted"
           >
             ✕
           </button>

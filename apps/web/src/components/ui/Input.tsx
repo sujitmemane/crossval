@@ -10,9 +10,9 @@ export function Input({ label, error, id, className = '', name, ref, ...rest }: 
   const inputId = id ?? name;
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {label ? (
-        <label htmlFor={inputId} className="text-sm font-medium text-slate-700">
+        <label htmlFor={inputId} className="text-sm font-medium text-foreground">
           {label}
         </label>
       ) : null}
@@ -20,12 +20,12 @@ export function Input({ label, error, id, className = '', name, ref, ...rest }: 
         ref={ref}
         id={inputId}
         name={name}
-        className={`rounded-md border px-3 py-2 text-sm outline-none transition-colors focus:border-slate-900 ${
-          error ? 'border-red-500' : 'border-slate-300'
+        className={`rounded-lg border bg-surfaceInput px-3 py-2.5 text-sm text-foreground shadow-xs outline-none transition-all placeholder:text-mutedForeground focus:border-accent focus:ring-2 focus:ring-accent/20 ${
+          error ? 'border-danger focus:border-danger focus:ring-danger/20' : 'border-borderInput'
         } ${className}`}
         {...rest}
       />
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-danger">{error}</p> : null}
     </div>
   );
 }

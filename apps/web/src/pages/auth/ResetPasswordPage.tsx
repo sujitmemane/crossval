@@ -50,8 +50,8 @@ export function ResetPasswordPage() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Reset password</h2>
-        <p className="text-sm text-slate-500">Choose a new password for your account.</p>
+        <h2 className="text-base font-semibold text-foreground">Reset password</h2>
+        <p className="text-sm text-muted">Choose a new password for your account.</p>
       </div>
 
       <Input
@@ -68,7 +68,7 @@ export function ResetPasswordPage() {
         Reset password
       </Button>
 
-      <Link to={paths.auth.signIn} className="text-center text-sm text-slate-500 hover:text-slate-900">
+      <Link to={paths.auth.signIn} className="text-center text-sm text-muted hover:text-foreground">
         Back to sign in
       </Link>
     </form>

@@ -9,6 +9,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
 import type { OrderStatus, OrderWithStatus } from '../../types/order';
 import type { AuditLog } from '../../types/audit-log';
+import { useOrganization } from '../../hooks/useOrganization';
+import { formatCurrency } from '../../lib/format-currency';
 
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger';
 
@@ -52,6 +54,9 @@ interface OrderDetailsDrawerProps {
 
 export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const { data: organization } = useOrganization();
+  const currency = organization?.currency ?? 'USD';
+  const money = (value: number) => formatCurrency(value, currency);
 
   const { data: customer, isLoading: isLoadingCustomer } = useQuery({
     queryKey: ['user', order.userId],
@@ -78,16 +83,23 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
   const balanceDue = order.totalAmount - order.amountPaid;
 
   return (
-    <Drawer title="Order details" onClose={onClose}>
-      <div className="flex flex-col gap-6">
-        <div className="flex gap-4 border-b border-slate-200">
+    <Drawer title={`Order #${order._id.slice(-6).toUpperCase()}`} onClose={onClose}>
+      <div className="flex flex-col gap-7">
+        <div className="flex items-center gap-2">
+          <Badge tone={statusTone[order.status]}>{order.status.replaceAll('_', ' ')}</Badge>
+          <span className="text-sm text-muted">
+            {order.items.length} item{order.items.length === 1 ? '' : 's'} · {money(order.totalAmount)}
+          </span>
+        </div>
+
+        <div className="flex gap-4 border-b border-border">
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
             className={`-mb-px border-b-2 pb-2 text-sm font-medium transition-colors ${
               activeTab === 'overview'
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             Overview
@@ -97,8 +109,8 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
             onClick={() => setActiveTab('audit')}
             className={`-mb-px border-b-2 pb-2 text-sm font-medium transition-colors ${
               activeTab === 'audit'
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             Audit log
@@ -106,40 +118,37 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
         </div>
 
         {activeTab === 'overview' ? (
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Customer</p>
-                {isLoadingCustomer ? (
-                  <p className="text-sm text-slate-400">Loading…</p>
-                ) : customer ? (
-                  <>
-                    <p className="text-sm font-medium text-slate-900">{customer.name}</p>
-                    <p className="text-sm text-slate-500">{customer.email}</p>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-500">{order.userId}</p>
-                )}
-              </div>
-              <Badge tone={statusTone[order.status]}>{order.status.replaceAll('_', ' ')}</Badge>
+          <div className="flex flex-col gap-7">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Customer</p>
+              {isLoadingCustomer ? (
+                <p className="text-sm text-mutedForeground">Loading…</p>
+              ) : customer ? (
+                <>
+                  <p className="text-sm font-medium text-foreground">{customer.name}</p>
+                  <p className="text-sm text-muted">{customer.email}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted">{order.userId}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Due date</p>
-                <p className="text-slate-900">{new Date(order.dueDate).toLocaleDateString()}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Due date</p>
+                <p className="text-foreground">{new Date(order.dueDate).toLocaleDateString()}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Created</p>
-                <p className="text-slate-900">{new Date(order.createdAt).toLocaleDateString()}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Created</p>
+                <p className="text-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Items</p>
-              <div className="overflow-hidden rounded-md border border-slate-200">
-                <table className="min-w-full divide-y divide-slate-200 text-sm">
-                  <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Items</p>
+              <div className="overflow-hidden rounded-md border border-border">
+                <table className="min-w-full divide-y divide-border text-sm">
+                  <thead className="bg-surfaceMuted text-left text-xs font-medium uppercase tracking-wide text-muted">
                     <tr>
                       <th className="px-3 py-2">Item</th>
                       <th className="px-3 py-2">Qty</th>
@@ -147,15 +156,13 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
                       <th className="px-3 py-2 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-border bg-surface">
                     {order.items.map((line) => (
                       <tr key={line._id}>
-                        <td className="px-3 py-2 text-slate-900">{itemsById.get(line.itemId)?.name ?? line.itemId}</td>
-                        <td className="px-3 py-2 text-slate-600">{line.quantity}</td>
-                        <td className="px-3 py-2 text-slate-600">{line.rate}</td>
-                        <td className="px-3 py-2 text-right text-slate-600">
-                          {(line.rate * line.quantity).toFixed(2)}
-                        </td>
+                        <td className="px-3 py-2 text-foreground">{itemsById.get(line.itemId)?.name ?? line.itemId}</td>
+                        <td className="px-3 py-2 text-muted">{line.quantity}</td>
+                        <td className="px-3 py-2 text-muted">{line.rate}</td>
+                        <td className="px-3 py-2 text-right text-muted">{money(line.rate * line.quantity)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -163,49 +170,49 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 border-t border-slate-200 pt-3 text-sm">
+            <div className="flex flex-col gap-1 border-t border-border pt-3 text-sm">
               <div className="flex items-center justify-between">
-                <p className="text-slate-500">Total</p>
-                <p className="text-slate-900">{order.totalAmount.toFixed(2)}</p>
+                <p className="text-muted">Total</p>
+                <p className="text-foreground">{money(order.totalAmount)}</p>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-slate-500">Paid</p>
-                <p className="text-slate-900">{order.amountPaid.toFixed(2)}</p>
+                <p className="text-muted">Paid</p>
+                <p className="text-foreground">{money(order.amountPaid)}</p>
               </div>
               <div className="flex items-center justify-between font-medium">
-                <p className="text-slate-700">Balance due</p>
-                <p className="text-slate-900">{balanceDue.toFixed(2)}</p>
+                <p className="text-foreground">Balance due</p>
+                <p className="text-foreground">{money(balanceDue)}</p>
               </div>
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Transaction history</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Transaction history</p>
               {isLoadingTransactions ? (
                 <div className="flex justify-center py-6">
                   <Spinner size="sm" />
                 </div>
               ) : !transactions || transactions.length === 0 ? (
-                <p className="text-sm text-slate-500">No payments or refunds recorded yet.</p>
+                <p className="text-sm text-muted">No payments or refunds recorded yet.</p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {transactions.map((transaction) => (
                     <div
                       key={transaction._id}
-                      className="flex items-start justify-between rounded-md border border-slate-200 px-3 py-2 text-sm"
+                      className="flex items-start justify-between rounded-md border border-border px-3 py-2 text-sm"
                     >
                       <div>
                         <div className="flex items-center gap-2">
                           <Badge tone={transaction.type === 'PAYMENT' ? 'success' : 'warning'}>
                             {transaction.type}
                           </Badge>
-                          <span className="text-slate-500">{transaction.method ?? '—'}</span>
+                          <span className="text-muted">{transaction.method ?? '—'}</span>
                         </div>
-                        {transaction.note ? <p className="mt-1 text-slate-500">{transaction.note}</p> : null}
-                        <p className="mt-1 text-xs text-slate-400">
+                        {transaction.note ? <p className="mt-1 text-muted">{transaction.note}</p> : null}
+                        <p className="mt-1 text-xs text-mutedForeground">
                           {new Date(transaction.createdAt).toLocaleString()}
                         </p>
                       </div>
-                      <p className="font-medium text-slate-900">{transaction.amount.toFixed(2)}</p>
+                      <p className="font-medium text-foreground">{money(transaction.amount)}</p>
                     </div>
                   ))}
                 </div>
@@ -217,7 +224,7 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
             <Spinner size="lg" />
           </div>
         ) : !auditLogs || auditLogs.length === 0 ? (
-          <p className="text-sm text-slate-500">No audit activity recorded for this order yet.</p>
+          <p className="text-sm text-muted">No audit activity recorded for this order yet.</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {[...auditLogs]
@@ -225,12 +232,12 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
               .map((log) => {
                 const description = describeAuditLog(log);
                 return (
-                  <li key={log._id} className="flex flex-col gap-1 rounded-md border border-slate-200 px-3 py-2">
+                  <li key={log._id} className="flex flex-col gap-1 rounded-md border border-border px-3 py-2">
                     <div className="flex items-center justify-between">
                       <Badge>{log.action.replaceAll('_', ' ')}</Badge>
-                      <span className="text-xs text-slate-400">{new Date(log.createdAt).toLocaleString()}</span>
+                      <span className="text-xs text-mutedForeground">{new Date(log.createdAt).toLocaleString()}</span>
                     </div>
-                    {description ? <p className="text-sm text-slate-600">{description}</p> : null}
+                    {description ? <p className="text-sm text-muted">{description}</p> : null}
                   </li>
                 );
               })}

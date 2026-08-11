@@ -45,9 +45,9 @@ export function ForgotPasswordPage() {
   if (isSent) {
     return (
       <div className="flex flex-col gap-3 text-center">
-        <h2 className="text-base font-semibold text-slate-900">Check your email</h2>
-        <p className="text-sm text-slate-500">If an account exists for {sentEmail}, a reset link is on its way.</p>
-        <Link to={paths.auth.signIn} className="text-sm font-medium text-slate-900 hover:underline">
+        <h2 className="text-base font-semibold text-foreground">Check your email</h2>
+        <p className="text-sm text-muted">If an account exists for {sentEmail}, a reset link is on its way.</p>
+        <Link to={paths.auth.signIn} className="text-sm font-medium text-foreground hover:underline">
           Back to sign in
         </Link>
       </div>
@@ -57,8 +57,8 @@ export function ForgotPasswordPage() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Forgot password</h2>
-        <p className="text-sm text-slate-500">We'll email you a link to reset it.</p>
+        <h2 className="text-base font-semibold text-foreground">Forgot password</h2>
+        <p className="text-sm text-muted">We'll email you a link to reset it.</p>
       </div>
 
       <Input
@@ -72,7 +72,7 @@ export function ForgotPasswordPage() {
         Send reset link
       </Button>
 
-      <Link to={paths.auth.signIn} className="text-center text-sm text-slate-500 hover:text-slate-900">
+      <Link to={paths.auth.signIn} className="text-center text-sm text-muted hover:text-foreground">
         Back to sign in
       </Link>
     </form>

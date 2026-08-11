@@ -25,7 +25,7 @@ export function ItemsPage() {
         actions={
           <Link
             to={paths.dashboard.itemsNew}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-button px-4 py-2 text-sm font-medium text-buttonText transition-colors hover:bg-primaryMuted"
           >
             Add item
           </Link>
@@ -41,9 +41,9 @@ export function ItemsPage() {
       ) : !data || data.items.length === 0 ? (
         <EmptyState title="No items yet" description="Items you add will show up here." />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-surfaceMuted text-left text-xs font-medium uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Rate</th>
@@ -52,19 +52,19 @@ export function ItemsPage() {
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-border bg-surface">
               {data.items.map((item) => (
                 <tr key={item._id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">{item.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{item.rate}</td>
-                  <td className="px-4 py-3 text-slate-600">{item.quantity}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
+                  <td className="px-4 py-3 text-muted">{item.rate}</td>
+                  <td className="px-4 py-3 text-muted">{item.quantity}</td>
                   <td className="px-4 py-3">
                     <Badge tone={item.status === 'AVAILABLE' ? 'success' : 'neutral'}>{item.status}</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       to={paths.dashboard.itemEdit(item._id)}
-                      className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline"
+                      className="text-sm font-medium text-muted hover:text-foreground hover:underline"
                     >
                       Edit
                     </Link>

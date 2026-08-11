@@ -63,7 +63,7 @@ function ProfileDetailsForm({ me }: { me: AuthUser }) {
 
   return (
     <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
-      <h2 className="text-sm font-semibold text-slate-900">Personal details</h2>
+      <h2 className="text-sm font-semibold text-foreground">Personal details</h2>
       <Input label="Name" error={errors.name?.message} {...register('name', { required: 'Name is required' })} />
       <Input
         label="Email"
@@ -106,7 +106,7 @@ function PasswordForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
-      <h2 className="text-sm font-semibold text-slate-900">Change password</h2>
+      <h2 className="text-sm font-semibold text-foreground">Change password</h2>
       <Input
         label="Current password"
         type="password"

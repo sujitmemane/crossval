@@ -8,6 +8,9 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
+import { ButtonLink } from '../../components/ui/Button';
+import { useOrganization } from '../../hooks/useOrganization';
+import { formatCurrency } from '../../lib/format-currency';
 import { paths } from '../../routes/paths';
 import { PaymentModal } from './PaymentModal';
 import { OrderDetailsDrawer } from './OrderDetailsDrawer';
@@ -25,6 +28,9 @@ const statusTone: Record<OrderStatus, BadgeTone> = {
 
 export function OrdersPage() {
   useDocumentTitle('Orders');
+  const { data: organization } = useOrganization();
+  const currency = organization?.currency ?? 'USD';
+  const money = (value: number) => formatCurrency(value, currency);
 
   const [paymentModal, setPaymentModal] = useState<{ order: OrderWithStatus; type: TransactionType } | null>(null);
   const [detailsOrder, setDetailsOrder] = useState<OrderWithStatus | null>(null);
@@ -38,15 +44,12 @@ export function OrdersPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Orders"
-        description="Track dues and payment status across customer orders."
-        actions={
-          <Link
-            to={paths.dashboard.ordersNew}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
-          >
-            Add order
-          </Link>
+        description={
+          organization
+            ? `Track dues and payment status · amounts shown in ${organization.currency}`
+            : 'Track dues and payment status across customer orders.'
         }
+        actions={<ButtonLink to={paths.dashboard.ordersNew}>New order</ButtonLink>}
       />
 
       {isLoading ? (
@@ -58,9 +61,9 @@ export function OrdersPage() {
       ) : !data || data.orders.length === 0 ? (
         <EmptyState title="No orders yet" description="Orders you create will show up here." />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-surfaceMuted text-left text-xs font-medium uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Due date</th>
                 <th className="px-4 py-3">Items</th>
@@ -70,55 +73,62 @@ export function OrdersPage() {
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {data.orders.map((order) => (
-                <tr
-                  key={order._id}
-                  onClick={() => setDetailsOrder(order)}
-                  className="cursor-pointer hover:bg-slate-50"
-                >
-                  <td className="px-4 py-3 text-slate-600">{new Date(order.dueDate).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-slate-600">{order.items.length}</td>
-                  <td className="px-4 py-3 text-slate-600">{order.totalAmount}</td>
-                  <td className="px-4 py-3 text-slate-600">{order.amountPaid}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={statusTone[order.status]}>{order.status.replaceAll('_', ' ')}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-3">
-                      <button
-                        type="button"
-                        disabled={order.amountPaid >= order.totalAmount}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPaymentModal({ order, type: 'PAYMENT' });
-                        }}
-                        className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                      >
-                        Pay
-                      </button>
-                      <button
-                        type="button"
-                        disabled={order.amountPaid <= 0}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPaymentModal({ order, type: 'REFUND' });
-                        }}
-                        className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                      >
-                        Refund
-                      </button>
-                      <Link
-                        to={paths.dashboard.orderEdit(order._id)}
-                        onClick={(event) => event.stopPropagation()}
-                        className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline"
-                      >
-                        Edit
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-border bg-surface">
+              {data.orders.map((order) => {
+                const isSelected = detailsOrder?._id === order._id;
+                return (
+                  <tr
+                    key={order._id}
+                    onClick={() => setDetailsOrder(order)}
+                    className={`cursor-pointer transition-colors ${isSelected ? 'bg-surfaceMuted' : 'hover:bg-surfaceMuted'}`}
+                  >
+                    <td
+                      className={`px-4 py-3.5 text-muted ${isSelected ? 'border-l-2 border-foreground' : 'border-l-2 border-transparent'}`}
+                    >
+                      {new Date(order.dueDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3.5 text-muted">{order.items.length}</td>
+                    <td className="px-4 py-3.5 font-medium text-foreground">{money(order.totalAmount)}</td>
+                    <td className="px-4 py-3.5 text-muted">{money(order.amountPaid)}</td>
+                    <td className="px-4 py-3.5">
+                      <Badge tone={statusTone[order.status]}>{order.status.replaceAll('_', ' ')}</Badge>
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <div className="flex justify-end gap-3">
+                        <button
+                          type="button"
+                          disabled={order.amountPaid >= order.totalAmount}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPaymentModal({ order, type: 'PAYMENT' });
+                          }}
+                          className="text-sm font-medium text-muted hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:text-mutedForeground disabled:no-underline"
+                        >
+                          Pay
+                        </button>
+                        <button
+                          type="button"
+                          disabled={order.amountPaid <= 0}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPaymentModal({ order, type: 'REFUND' });
+                          }}
+                          className="text-sm font-medium text-muted hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:text-mutedForeground disabled:no-underline"
+                        >
+                          Refund
+                        </button>
+                        <Link
+                          to={paths.dashboard.orderEdit(order._id)}
+                          onClick={(event) => event.stopPropagation()}
+                          className="text-sm font-medium text-muted hover:text-foreground hover:underline"
+                        >
+                          Edit
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
