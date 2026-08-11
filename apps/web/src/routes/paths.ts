@@ -13,6 +13,8 @@ export const paths = {
     itemEdit: (id: string) => `/dashboard/items/${id}/edit`,
     transactions: '/dashboard/transactions',
     users: '/dashboard/users',
+    usersNew: '/dashboard/users/new',
+    userEdit: (id: string) => `/dashboard/users/${id}/edit`,
     organization: '/dashboard/organization',
     auditLogs: '/dashboard/audit-logs',
     profile: '/dashboard/profile',

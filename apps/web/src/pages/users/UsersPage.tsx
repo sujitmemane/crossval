@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { usersApi } from '../../api/users.api';
 import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -6,6 +7,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
+import { paths } from '../../routes/paths';
 
 export function UsersPage() {
   useDocumentTitle('Users');
@@ -17,7 +19,18 @@ export function UsersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Users" description="Manage teammates and their access to this organization." />
+      <PageHeader
+        title="Users"
+        description="Manage teammates and their access to this organization."
+        actions={
+          <Link
+            to={paths.dashboard.usersNew}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
+          >
+            Add user
+          </Link>
+        }
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -35,6 +48,7 @@ export function UsersPage() {
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -44,6 +58,14 @@ export function UsersPage() {
                   <td className="px-4 py-3 text-slate-600">{orgUser.email}</td>
                   <td className="px-4 py-3">
                     <Badge tone={orgUser.role === 'ADMIN' ? 'success' : 'neutral'}>{orgUser.role}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      to={paths.dashboard.userEdit(orgUser._id)}
+                      className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline"
+                    >
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}

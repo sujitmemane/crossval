@@ -10,6 +10,7 @@ import { ItemFormPage } from '../pages/items/ItemFormPage';
 import { OrdersPage } from '../pages/orders/OrdersPage';
 import { TransactionsPage } from '../pages/transactions/TransactionsPage';
 import { UsersPage } from '../pages/users/UsersPage';
+import { UserFormPage } from '../pages/users/UserFormPage';
 import { OrganizationPage } from '../pages/organization/OrganizationPage';
 import { AuditLogsPage } from '../pages/audit-logs/AuditLogsPage';
 import { ProfilePage } from '../pages/profile/ProfilePage';
@@ -39,7 +40,11 @@ export const router = createBrowserRouter([
           { path: 'profile', element: <ProfilePage /> },
           {
             element: <ProtectedRoute roles={['ADMIN']} />,
-            children: [{ path: 'users', element: <UsersPage /> }],
+            children: [
+              { path: 'users', element: <UsersPage /> },
+              { path: 'users/new', element: <UserFormPage /> },
+              { path: 'users/:id/edit', element: <UserFormPage /> },
+            ],
           },
         ],
       },

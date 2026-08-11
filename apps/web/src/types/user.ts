@@ -24,6 +24,12 @@ export interface CreateUserPayload {
   role: UserRole;
 }
 
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  role?: UserRole;
+}
+
 export interface UpdateProfilePayload {
   name: string;
   email: string;

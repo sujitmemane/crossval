@@ -14,6 +14,7 @@ import {
 } from './user.repository';
 import { sendEmail } from '../../lib/email';
 import { findOrganizationById } from '../organizations/organization.repository';
+import { env } from '../../config/env';
 
 const assertEmailIsFree = async (email: string, currentUserId: string) => {
     const existing = await findUserByEmail(email);
@@ -87,18 +88,31 @@ export const createUser = async (
     });
 
     if (input.role === 'ADMIN') {
+        const signInLink = `${env.frontendUrl}/auth/sign-in`;
         console.log("Sending email to", input.email);
         await sendEmail(
             input.email,
             `Welcome to ${organization.name}`,
             `<p>Hi ${input.name},</p>
             <p>${organization.name} has added you as an admin.</p>
-            <p>You can log in with:</p>
-            <p>Email: ${input.email}<br/>Password: ${input.password}</p>`
+            <p>Here are your login details:</p>
+            <p>
+                Organization: ${organization.name}<br/>
+                Email: ${input.email}<br/>
+                Password: ${input.password}<br/>
+                Role: ${input.role}
+            </p>
+            <p>Sign in here: <a href="${signInLink}">${signInLink}</a></p>
+            <p>For security, we recommend changing your password after signing in.</p>`
         );
     }
 
-    return success('User created successfully', toSafeUser(user));
+    const message =
+        input.role === 'ADMIN'
+            ? 'Admin created successfully. Login credentials have been sent to their email.'
+            : 'User created successfully';
+
+    return success(message, toSafeUser(user));
 };
 
 export const updateUser = async (
