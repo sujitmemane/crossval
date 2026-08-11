@@ -56,6 +56,53 @@ export const updateOrderById = async (
     return await Order.findOneAndUpdate({ _id: id, organizationId }, updates, { new: true, session });
 };
 
+export const getOrderStats = async (organizationId: string) => {
+    const now = new Date();
+
+    const [result] = await Order.aggregate([
+        { $match: { organizationId: new mongoose.Types.ObjectId(organizationId) } },
+        {
+            $group: {
+                _id: null,
+                totalOrders: { $sum: 1 },
+                totalOrderValue: { $sum: '$totalAmount' },
+                totalCollected: { $sum: '$amountPaid' },
+                overdueAmount: {
+                    $sum: {
+                        $cond: [
+                            { $and: [{ $lt: ['$amountPaid', '$totalAmount'] }, { $lt: ['$dueDate', now] }] },
+                            { $subtract: ['$totalAmount', '$amountPaid'] },
+                            0,
+                        ],
+                    },
+                },
+                overdueOrders: {
+                    $sum: {
+                        $cond: [
+                            { $and: [{ $lt: ['$amountPaid', '$totalAmount'] }, { $lt: ['$dueDate', now] }] },
+                            1,
+                            0,
+                        ],
+                    },
+                },
+            },
+        },
+    ]);
+
+    const totalOrders = result?.totalOrders ?? 0;
+    const totalOrderValue = result?.totalOrderValue ?? 0;
+    const totalCollected = result?.totalCollected ?? 0;
+
+    return {
+        totalOrders,
+        totalOrderValue,
+        totalCollected,
+        amountDue: totalOrderValue - totalCollected,
+        overdueAmount: result?.overdueAmount ?? 0,
+        overdueOrders: result?.overdueOrders ?? 0,
+    };
+};
+
 export const applyOrderPayment = async (
     id: string,
     organizationId: string,

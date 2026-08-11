@@ -13,6 +13,12 @@ export const createOrder = async (req: Request, res: Response) => {
     res.status(201).json(result);
 };
 
+export const getOrderStats = async (req: Request, res: Response) => {
+    const organizationId = req.user!.organizationId!;
+    const result = await orderService.getOrderStats(organizationId);
+    res.status(200).json(result);
+};
+
 export const getOrders = async (req: Request, res: Response) => {
     const organizationId = req.user!.organizationId!;
     const query = req.query as unknown as OrderQuery;

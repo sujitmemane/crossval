@@ -41,3 +41,12 @@ export interface UpdateOrderPayload {
   dueDate?: string;
   items?: { itemId: string; quantity: number }[];
 }
+
+export interface OrderStats {
+  totalOrders: number;
+  totalOrderValue: number;
+  totalCollected: number;
+  amountDue: number;
+  overdueAmount: number;
+  overdueOrders: number;
+}

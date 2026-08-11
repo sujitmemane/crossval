@@ -3,7 +3,13 @@ import { AppError } from '../../lib/errors';
 import { success } from '../../lib/response';
 import { calculateOrderTotal } from '../../domain/order/calculate-total';
 import { isOrderUpdateAllowed } from '../../domain/order/order-update';
-import { createOrder as createOrderRepo, findOrderById, findOrdersByOrganization, updateOrderById } from './order.repository';
+import {
+    createOrder as createOrderRepo,
+    findOrderById,
+    findOrdersByOrganization,
+    getOrderStats as getOrderStatsRepo,
+    updateOrderById,
+} from './order.repository';
 import { findItemsByIds } from '../items/item.repository';
 import { findUserById } from '../users/user.repository';
 import { deriveOrderStatus } from '../../domain/order/derive-status';
@@ -68,6 +74,11 @@ export const createOrder = async (
     } finally {
         session.endSession();
     }
+};
+
+export const getOrderStats = async (organizationId: string) => {
+    const stats = await getOrderStatsRepo(organizationId);
+    return success('Order stats fetched successfully', stats);
 };
 
 export const getOrders = async (
