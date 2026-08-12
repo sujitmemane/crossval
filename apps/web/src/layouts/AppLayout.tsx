@@ -3,9 +3,12 @@ import { Outlet } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Sidebar } from '../components/layout/Sidebar';
 import { LayoutProvider } from '../components/layout/LayoutContext';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 export function AppLayout() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  useKeyboardShortcuts();
 
   return (
     <LayoutProvider sidebarExpanded={sidebarExpanded} setSidebarExpanded={setSidebarExpanded}>

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { itemsApi } from '../../../api/items.api';
+import { ITEMS_CATALOG_LIMIT, itemsQueryKeys } from '../../../lib/items-query-keys';
 import { usersApi } from '../../../api/users.api';
 import { ordersApi } from '../../../api/orders.api';
 import { ApiError } from '../../../lib/api-client';
@@ -41,8 +42,8 @@ export function useOrderForm() {
   });
 
   const { data: itemsData, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['items'],
-    queryFn: () => itemsApi.list().then((res) => res.data),
+    queryKey: itemsQueryKeys.catalog(),
+    queryFn: () => itemsApi.list({ limit: ITEMS_CATALOG_LIMIT }).then((res) => res.data),
   });
 
   const {

@@ -1,12 +1,13 @@
 import { Outlet } from 'react-router-dom';
 import logo from '../..//public/auth-hero.png';
+import { CrossvalLogo } from '../components/ui/CrossvalLogo';
 
 export function AuthLayout() {
   return (
     <div className="flex min-h-screen bg-surface">
       <div className="flex w-full flex-col justify-center px-6 py-12 sm:px-10 lg:w-1/2 lg:px-16 xl:px-24">
         <div className="mx-auto w-full max-w-sm">
-          <img src="/crossval-logo.svg" alt="Crossval" className="mb-10 h-5 w-auto" />
+          <CrossvalLogo className="mb-10" />
           <Outlet />
         </div>
       </div>

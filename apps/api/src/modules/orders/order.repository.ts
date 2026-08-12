@@ -47,6 +47,27 @@ export const findOrdersByOrganization = async (
     return { orders, total };
 };
 
+export const countOrdersByDateRange = async (organizationId: string, startDate: Date, endDate: Date) => {
+    return await Order.countDocuments({
+        organizationId,
+        createdAt: { $gte: startDate, $lte: endDate },
+    });
+};
+
+export const iterateOrdersByDateRange = (
+    organizationId: string,
+    startDate: Date,
+    endDate: Date
+) => {
+    return Order.find({
+        organizationId,
+        createdAt: { $gte: startDate, $lte: endDate },
+    })
+        .sort({ createdAt: 1 })
+        .lean()
+        .cursor({ batchSize: 500 });
+};
+
 export const updateOrderById = async (
     id: string,
     organizationId: string,

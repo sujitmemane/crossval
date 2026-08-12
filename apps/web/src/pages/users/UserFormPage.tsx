@@ -7,11 +7,15 @@ import { usersApi } from '../../api/users.api';
 import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Spinner } from '../../components/ui/Spinner';
-import { EmptyState } from '../../components/ui/EmptyState';
+import {
+  FormActions,
+  FormField,
+  FormPageShell,
+  FormSection,
+  OptionPicker,
+} from '../../components/ui/FormLayout';
 import { paths } from '../../routes/paths';
 import type { UserRole } from '../../types/auth';
 import type { UpdateUserPayload } from '../../types/user';
@@ -30,6 +34,11 @@ interface CreatedCredentials {
 }
 
 const defaultValues: UserFormValues = { name: '', email: '', role: 'CUSTOMER' };
+
+const ROLE_OPTIONS: { id: UserRole; label: string }[] = [
+  { id: 'CUSTOMER', label: 'Customer' },
+  { id: 'ADMIN', label: 'Admin' },
+];
 
 const PASSWORD_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
 
@@ -59,8 +68,12 @@ export function UserFormPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<UserFormValues>({ defaultValues });
+
+  const role = watch('role');
 
   useEffect(() => {
     if (user) {
@@ -73,6 +86,8 @@ export function UserFormPage() {
     mutationFn: (payload: UpdateUserPayload) => usersApi.update(id as string, payload),
   });
 
+  const goBack = () => navigate((routes) => routes.dashboard.users);
+
   const onSubmit = handleSubmit(async (values) => {
     try {
       if (isEditMode) {
@@ -80,7 +95,7 @@ export function UserFormPage() {
         if (response.success) {
           await queryClient.invalidateQueries({ queryKey: ['users'] });
           toast.success(response.message);
-          navigate((routes) => routes.dashboard.users);
+          goBack();
         } else {
           toast.error(response.message);
         }
@@ -88,7 +103,12 @@ export function UserFormPage() {
       }
 
       const password = generateTempPassword();
-      const response = await createUser.mutateAsync({ name: values.name, email: values.email, password, role: values.role });
+      const response = await createUser.mutateAsync({
+        name: values.name,
+        email: values.email,
+        password,
+        role: values.role,
+      });
       if (response.success) {
         await queryClient.invalidateQueries({ queryKey: ['users'] });
         toast.success(response.message);
@@ -119,116 +139,113 @@ Temporary password: ${createdCredentials.password}
 Please sign in and change your password.`
     : '';
 
-  if (isEditMode && isLoading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (isEditMode && !user) {
-    return <EmptyState title="User not found" description="This user may have been removed." />;
-  }
-
   if (createdCredentials) {
     return (
-      <div className="flex flex-col gap-6">
-        <PageHeader title="User created" description="Copy these details and send them to the new teammate." />
+      <FormPageShell
+        title="User created"
+        description="Copy these details and send them to the new teammate."
+        back={{ label: 'Back to users', onClick: goBack }}
+      >
+        <div className="flex max-w-2xl flex-col gap-5">
+          <FormSection title="Login details">
+            <FormField label="Email">
+              <p className="text-sm text-foreground">{createdCredentials.email}</p>
+            </FormField>
 
-        <div className="flex max-w-md flex-col gap-4 rounded-lg border border-border p-4">
-          <div>
-            <p className="text-sm font-medium text-foreground">Email</p>
-            <p className="text-sm text-foreground">{createdCredentials.email}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Temporary password</p>
-            <div className="mt-1 flex items-center gap-2">
-              <code className="flex-1 rounded-md border border-borderInput bg-surfaceMuted px-3 py-2 text-sm text-foreground">
-                {createdCredentials.password}
-              </code>
-              <Button type="button" variant="secondary" onClick={() => copyToClipboard(createdCredentials.password, 'password')}>
-                {copiedField === 'password' ? 'Copied' : 'Copy'}
-              </Button>
-            </div>
-            {createdCredentials.role === 'ADMIN' ? (
-              <p className="mt-1 text-xs text-muted">This has also been emailed to them.</p>
-            ) : (
-              <p className="mt-1 text-xs text-muted">This won't be shown again — copy it now.</p>
-            )}
-          </div>
+            <FormField label="Temporary password">
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-md border border-borderInput bg-surfaceMuted px-3 py-2 text-sm text-foreground">
+                  {createdCredentials.password}
+                </code>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => copyToClipboard(createdCredentials.password, 'password')}
+                >
+                  {copiedField === 'password' ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+              {createdCredentials.role === 'ADMIN' ? (
+                <p className="text-xs text-muted">This has also been emailed to them.</p>
+              ) : (
+                <p className="text-xs text-muted">This won't be shown again — copy it now.</p>
+              )}
+            </FormField>
+          </FormSection>
 
-          <div>
-            <p className="text-sm font-medium text-foreground">Message to send</p>
+          <FormSection title="Message to send">
             <textarea
               readOnly
               rows={7}
               value={invitationMessage}
-              className="mt-1 w-full resize-none rounded-md border border-borderInput bg-surfaceMuted px-3 py-2 text-sm text-foreground outline-none"
-              onFocus={(e) => e.currentTarget.select()}
+              className="w-full resize-none rounded-lg border border-borderInput bg-surfaceInput px-3 py-2.5 text-sm text-foreground shadow-xs outline-none"
+              onFocus={(event) => event.currentTarget.select()}
             />
             <Button
               type="button"
               variant="secondary"
-              className="mt-2"
+              size="sm"
+              className="w-fit"
               onClick={() => copyToClipboard(invitationMessage, 'message')}
             >
               {copiedField === 'message' ? 'Copied' : 'Copy message'}
             </Button>
-          </div>
+          </FormSection>
 
-          <Button type="button" onClick={() => navigate((routes) => routes.dashboard.users)}>
-            Done
-          </Button>
+          <FormActions>
+            <Button type="button" onClick={goBack}>
+              Done
+            </Button>
+          </FormActions>
         </div>
-      </div>
+      </FormPageShell>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={isEditMode ? 'Edit user' : 'Add user'}
-        description={
-          isEditMode
-            ? "Update this teammate's details."
-            : 'Invite a new teammate to your organization. A temporary password will be generated for them.'
-        }
-      />
+    <FormPageShell
+      title={isEditMode ? 'Edit user' : 'Add user'}
+      description={
+        isEditMode
+          ? "Update this teammate's details."
+          : 'Invite a new teammate to your organization. A temporary password will be generated for them.'
+      }
+      back={{ label: 'Back to users', onClick: goBack }}
+      isLoading={isEditMode && isLoading}
+      notFound={
+        isEditMode && !isLoading && !user
+          ? { title: 'User not found', description: 'This user may have been removed.' }
+          : undefined
+      }
+    >
+      <form onSubmit={onSubmit} className="flex max-w-2xl flex-col gap-5">
+        <FormSection title="User details">
+          <FormField label="Name" error={errors.name?.message}>
+            <Input {...register('name', { required: 'Name is required' })} />
+          </FormField>
 
-      <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
-        <Input label="Name" error={errors.name?.message} {...register('name', { required: 'Name is required' })} />
+          <FormField label="Email" error={errors.email?.message}>
+            <Input type="email" {...register('email', { required: 'Email is required' })} />
+          </FormField>
 
-        <Input
-          label="Email"
-          type="email"
-          error={errors.email?.message}
-          {...register('email', { required: 'Email is required' })}
-        />
+          <OptionPicker
+            label="Role"
+            value={role}
+            options={ROLE_OPTIONS}
+            onChange={(value) => setValue('role', value, { shouldDirty: true })}
+          />
+        </FormSection>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="role" className="text-sm font-medium text-foreground">
-            Role
-          </label>
-          <select
-            id="role"
-            className="rounded-md border border-borderInput bg-surfaceInput px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
-            {...register('role')}
-          >
-            <option value="CUSTOMER">Customer</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2">
+        <FormActions>
           <Button type="submit" isLoading={isSubmitting}>
             {isEditMode ? 'Save changes' : 'Add user'}
           </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate((routes) => routes.dashboard.users)}>
+          <Button type="button" variant="ghost" size="sm" onClick={goBack}>
             Cancel
           </Button>
-        </div>
+        </FormActions>
       </form>
-    </div>
+    </FormPageShell>
   );
 }

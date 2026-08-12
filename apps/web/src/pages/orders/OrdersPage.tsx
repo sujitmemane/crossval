@@ -15,6 +15,7 @@ import { paths } from '../../routes/paths';
 import { PaymentModal } from './PaymentModal';
 import { OrderDetailsDrawer } from './OrderDetailsDrawer';
 import { OrderRowActions } from './OrderRowActions';
+import { ExportOrdersBar } from './ExportOrdersBar';
 import type { OrderStatus, OrderWithStatus } from '../../types/order';
 import type { TransactionType } from '../../types/transaction';
 
@@ -71,6 +72,8 @@ export function OrdersPage() {
         }
         actions={<ButtonLink to={paths.dashboard.ordersNew}>New order</ButtonLink>}
       />
+
+      <ExportOrdersBar />
 
       {isLoading ? (
         <Card padding="none" className="flex min-h-[320px] items-center justify-center">

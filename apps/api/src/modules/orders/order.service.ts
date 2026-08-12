@@ -1,12 +1,17 @@
 import mongoose from 'mongoose';
 import { AppError } from '../../lib/errors';
+import { CSV_BOM, formatCsvRecord, formatCsvRow } from '../../lib/csv';
+import { CSV_UTC_DATE_NOTE, formatUtcDateTime } from '../../lib/format-date';
 import { success } from '../../lib/response';
 import { calculateOrderTotal } from '../../domain/order/calculate-total';
 import { isOrderUpdateAllowed } from '../../domain/order/order-update';
+import { IOrder } from './order.model';
 import {
     createOrder as createOrderRepo,
     findOrderById,
     findOrdersByOrganization,
+    countOrdersByDateRange,
+    iterateOrdersByDateRange,
     getOrderStats as getOrderStatsRepo,
     updateOrderById,
 } from './order.repository';
@@ -185,5 +190,75 @@ export const updateOrder = async (
         throw error;
     } finally {
         session.endSession();
+    }
+};
+
+const ORDER_CSV_HEADERS = [
+    'order_id',
+    'customer_id',
+    'due_date (UTC)',
+    'status',
+    'total_amount',
+    'amount_paid',
+    'balance_due',
+    'item_count',
+    'created_at (UTC)',
+] as const;
+
+type OrderExportDocument = IOrder & {
+    _id: mongoose.Types.ObjectId;
+    createdAt: Date;
+};
+
+const MAX_ORDER_EXPORT_ROWS = 50_000;
+
+function mapOrderToCsvRow(order: OrderExportDocument) {
+    const status = deriveOrderStatus({
+        totalAmount: order.totalAmount,
+        amountPaid: order.amountPaid,
+        dueDate: order.dueDate,
+    });
+
+    return {
+        order_id: order._id.toString(),
+        customer_id: order.userId.toString(),
+        'due_date (UTC)': formatUtcDateTime(order.dueDate),
+        status,
+        total_amount: order.totalAmount,
+        amount_paid: order.amountPaid,
+        balance_due: order.totalAmount - order.amountPaid,
+        item_count: order.items.length,
+        'created_at (UTC)': formatUtcDateTime(order.createdAt),
+    };
+}
+
+export const streamOrdersCsv = async (
+    organizationId: string,
+    startDate: Date,
+    endDate: Date,
+    write: (chunk: string) => void
+) => {
+    const total = await countOrdersByDateRange(organizationId, startDate, endDate);
+
+    if (total === 0) {
+        throw new AppError('No orders found for the selected date range', 404);
+    }
+
+    if (total > MAX_ORDER_EXPORT_ROWS) {
+        throw new AppError(
+            `Export is limited to ${MAX_ORDER_EXPORT_ROWS.toLocaleString()} orders. Narrow your date range.`,
+            413
+        );
+    }
+
+    write(CSV_BOM);
+    write(`# ${CSV_UTC_DATE_NOTE}\n`);
+    write(`${formatCsvRow(ORDER_CSV_HEADERS)}\n`);
+
+    const cursor = iterateOrdersByDateRange(organizationId, startDate, endDate);
+
+    for await (const order of cursor) {
+        const row = mapOrderToCsvRow(order as unknown as OrderExportDocument);
+        write(`${formatCsvRecord(ORDER_CSV_HEADERS, row)}\n`);
     }
 };

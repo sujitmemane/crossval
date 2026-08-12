@@ -32,3 +32,13 @@ export const getOrdersSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
 });
+
+export const exportOrdersSchema = z
+    .object({
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date(),
+    })
+    .refine((value) => value.startDate <= value.endDate, {
+        message: 'startDate must be before or equal to endDate',
+        path: ['startDate'],
+    });

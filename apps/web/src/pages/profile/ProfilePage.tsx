@@ -5,10 +5,9 @@ import { usersApi } from '../../api/users.api';
 import { ApiError } from '../../lib/api-client';
 import { useAuth } from '../../hooks/useAuth';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Spinner } from '../../components/ui/Spinner';
+import { FormActions, FormField, FormPageShell, FormSection } from '../../components/ui/FormLayout';
 import type { AuthUser } from '../../types/auth';
 import type { ChangePasswordPayload, UpdateProfilePayload } from '../../types/user';
 
@@ -17,20 +16,18 @@ export function ProfilePage() {
   const { user } = useAuth();
 
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader title="Profile" description="Manage your personal account details." />
-
-      {!user ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
-        </div>
-      ) : (
-        <>
+    <FormPageShell
+      title="Profile"
+      description="Manage your personal account details."
+      isLoading={!user}
+    >
+      {user ? (
+        <div className="flex max-w-2xl flex-col gap-5">
           <ProfileDetailsForm key={user._id} me={user} />
           <PasswordForm />
-        </>
-      )}
-    </div>
+        </div>
+      ) : null}
+    </FormPageShell>
   );
 }
 
@@ -62,18 +59,22 @@ function ProfileDetailsForm({ me }: { me: AuthUser }) {
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
-      <h2 className="text-sm font-semibold text-foreground">Personal details</h2>
-      <Input label="Name" error={errors.name?.message} {...register('name', { required: 'Name is required' })} />
-      <Input
-        label="Email"
-        type="email"
-        error={errors.email?.message}
-        {...register('email', { required: 'Email is required' })}
-      />
-      <Button type="submit" isLoading={isSubmitting} className="w-fit">
-        Save profile
-      </Button>
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <FormSection title="Personal details">
+        <FormField label="Name" error={errors.name?.message}>
+          <Input {...register('name', { required: 'Name is required' })} />
+        </FormField>
+
+        <FormField label="Email" error={errors.email?.message}>
+          <Input type="email" {...register('email', { required: 'Email is required' })} />
+        </FormField>
+      </FormSection>
+
+      <FormActions>
+        <Button type="submit" isLoading={isSubmitting}>
+          Save profile
+        </Button>
+      </FormActions>
     </form>
   );
 }
@@ -105,26 +106,31 @@ function PasswordForm() {
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
-      <h2 className="text-sm font-semibold text-foreground">Change password</h2>
-      <Input
-        label="Current password"
-        type="password"
-        error={errors.currentPassword?.message}
-        {...register('currentPassword', { required: 'Current password is required' })}
-      />
-      <Input
-        label="New password"
-        type="password"
-        error={errors.newPassword?.message}
-        {...register('newPassword', {
-          required: 'New password is required',
-          minLength: { value: 8, message: 'Must be at least 8 characters' },
-        })}
-      />
-      <Button type="submit" isLoading={isSubmitting} className="w-fit">
-        Update password
-      </Button>
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <FormSection title="Change password">
+        <FormField label="Current password" error={errors.currentPassword?.message}>
+          <Input
+            type="password"
+            {...register('currentPassword', { required: 'Current password is required' })}
+          />
+        </FormField>
+
+        <FormField label="New password" error={errors.newPassword?.message}>
+          <Input
+            type="password"
+            {...register('newPassword', {
+              required: 'New password is required',
+              minLength: { value: 8, message: 'Must be at least 8 characters' },
+            })}
+          />
+        </FormField>
+      </FormSection>
+
+      <FormActions>
+        <Button type="submit" isLoading={isSubmitting}>
+          Update password
+        </Button>
+      </FormActions>
     </form>
   );
 }

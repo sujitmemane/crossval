@@ -1,4 +1,4 @@
-import type { PaginationMeta } from './pagination';
+import type { PaginationMeta, PaginationParams } from './pagination';
 
 export type ItemStatus = 'AVAILABLE' | 'UNAVAILABLE';
 
@@ -17,6 +17,11 @@ export interface Item {
 export interface ItemsResponse {
   items: Item[];
   pagination: PaginationMeta;
+}
+
+export interface ListItemsParams extends PaginationParams {
+  status?: ItemStatus;
+  search?: string;
 }
 
 export interface CreateItemPayload {

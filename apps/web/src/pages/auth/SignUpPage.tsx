@@ -47,7 +47,7 @@ export function SignUpPage() {
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
         <h2 className="text-base font-semibold text-foreground">Create your organization</h2>
-        <p className="text-sm text-muted">Get started with Settle.</p>
+        <p className="text-sm text-muted">Get started with Crossval.</p>
       </div>
 
       <Input

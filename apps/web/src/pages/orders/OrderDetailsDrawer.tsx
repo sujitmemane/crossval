@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { itemsApi } from '../../api/items.api';
+import { ITEMS_CATALOG_LIMIT, itemsQueryKeys } from '../../lib/items-query-keys';
 import { usersApi } from '../../api/users.api';
 import { transactionsApi } from '../../api/transactions.api';
 import { auditLogsApi } from '../../api/audit-logs.api';
@@ -14,6 +15,7 @@ import type { AuditLog } from '../../types/audit-log';
 import type { TransactionType } from '../../types/transaction';
 import { useOrganization } from '../../hooks/useOrganization';
 import { formatCurrency } from '../../lib/format-currency';
+import { formatOrderLabel } from '../../lib/format-order-id';
 
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger';
 
@@ -68,8 +70,8 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
   });
 
   const { data: itemsData } = useQuery({
-    queryKey: ['items'],
-    queryFn: () => itemsApi.list().then((res) => res.data),
+    queryKey: itemsQueryKeys.catalog(),
+    queryFn: () => itemsApi.list({ limit: ITEMS_CATALOG_LIMIT }).then((res) => res.data),
   });
 
   const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
@@ -89,12 +91,15 @@ export function OrderDetailsDrawer({ order, onClose }: OrderDetailsDrawerProps) 
   return (
     <>
       <Drawer
-        title={`Order #${order._id.slice(-6).toUpperCase()}`}
+        title={formatOrderLabel(order._id)}
         onClose={onClose}
         footer={
-          <div className="flex justify-end">
-            <OrderRowActions order={order} onPayment={(_order, type) => setPaymentType(type)} />
-          </div>
+          <OrderRowActions
+            order={order}
+            currency={currency}
+            variant="footer"
+            onPayment={(_order, type) => setPaymentType(type)}
+          />
         }
       >
       <div className="flex flex-col gap-7">

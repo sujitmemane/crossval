@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useLayout } from './LayoutContext';
 import { dashboardNavItems } from './nav-config';
+import { CrossvalLogo } from '../ui/CrossvalLogo';
 import { IconChevronLeft, IconChevronRight, IconProfile } from '../ui/Icons';
 import { paths } from '../../routes/paths';
 
@@ -20,11 +21,8 @@ export function Sidebar() {
         }`}
       >
         <div className={`flex h-14 items-center ${sidebarExpanded ? 'px-4' : 'justify-center'}`}>
-          <Link to={paths.dashboard.home} className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white">
-              S
-            </div>
-            {sidebarExpanded ? <span className="truncate text-sm font-semibold text-foreground">Settle</span> : null}
+          <Link to={paths.dashboard.home} className="flex items-center gap-2.5 overflow-hidden text-foreground">
+            {sidebarExpanded ? <CrossvalLogo /> : <CrossvalLogo variant="mark" />}
           </Link>
         </div>
 

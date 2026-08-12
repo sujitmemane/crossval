@@ -3,9 +3,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { transactionsApi } from '../../api/transactions.api';
 import { ApiError } from '../../lib/api-client';
+import { useOrganization } from '../../hooks/useOrganization';
+import { formatCurrency } from '../../lib/format-currency';
+import { formatOrderLabel } from '../../lib/format-order-id';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { FormField, OptionPicker } from '../../components/ui/FormLayout';
 import type { TransactionMethod, TransactionType } from '../../types/transaction';
 import type { OrderWithStatus } from '../../types/order';
 
@@ -21,16 +25,37 @@ interface PaymentFormValues {
   note: string;
 }
 
+const METHOD_OPTIONS: { id: TransactionMethod; label: string }[] = [
+  { id: 'CASH', label: 'Cash' },
+  { id: 'BANK_TRANSFER', label: 'Bank transfer' },
+  { id: 'CARD', label: 'Card' },
+  { id: 'UPI', label: 'UPI' },
+  { id: 'OTHER', label: 'Other' },
+];
+
 export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
   const queryClient = useQueryClient();
+  const { data: organization } = useOrganization();
+  const currency = organization?.currency ?? 'USD';
+  const money = (value: number) => formatCurrency(value, currency);
+
   const isRefund = type === 'REFUND';
-  const maxAmount = isRefund ? order.amountPaid : order.totalAmount - order.amountPaid;
+  const balanceDue = order.totalAmount - order.amountPaid;
+  const maxAmount = isRefund ? order.amountPaid : balanceDue;
+  const orderLabel = formatOrderLabel(order._id);
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<PaymentFormValues>({ defaultValues: { amount: maxAmount, method: 'CASH', note: '' } });
+  } = useForm<PaymentFormValues>({
+    defaultValues: { amount: maxAmount, method: 'CASH', note: '' },
+  });
+
+  const amount = watch('amount');
+  const method = watch('method');
 
   const createTransaction = useMutation({ mutationFn: transactionsApi.create });
 
@@ -48,6 +73,7 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
       if (response.success) {
         await queryClient.invalidateQueries({ queryKey: ['orders'] });
         await queryClient.invalidateQueries({ queryKey: ['transactions', order._id] });
+        await queryClient.invalidateQueries({ queryKey: ['audit-logs', 'order', order._id] });
         toast.success(response.message);
         onClose();
       } else {
@@ -58,60 +84,115 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
     }
   });
 
+  const fillMaxAmount = () => {
+    setValue('amount', maxAmount, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const paidPercent = order.totalAmount > 0 ? Math.min(100, (order.amountPaid / order.totalAmount) * 100) : 0;
+
   return (
-    <Modal title={isRefund ? 'Refund payment' : 'Record payment'} onClose={onClose}>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <Input
-          label={`Amount (max ${maxAmount.toFixed(2)})`}
-          type="number"
-          min={0.01}
-          step="0.01"
-          error={errors.amount?.message}
-          {...register('amount', {
-            required: 'Amount is required',
-            min: { value: 0.01, message: 'Must be greater than 0' },
-            max: { value: maxAmount, message: `Cannot exceed ${maxAmount.toFixed(2)}` },
-            valueAsNumber: true,
-          })}
-        />
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="method" className="text-sm font-medium text-foreground">
-            Method
-          </label>
-          <select
-            id="method"
-            className="rounded-md border border-borderInput bg-surfaceInput px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
-            {...register('method')}
-          >
-            <option value="CASH">Cash</option>
-            <option value="BANK_TRANSFER">Bank transfer</option>
-            <option value="CARD">Card</option>
-            <option value="UPI">UPI</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="note" className="text-sm font-medium text-foreground">
-            Note (optional)
-          </label>
-          <textarea
-            id="note"
-            rows={3}
-            className="rounded-md border border-borderInput bg-surfaceInput px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
-            {...register('note')}
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button type="submit" isLoading={isSubmitting}>
-            {isRefund ? 'Refund' : 'Record payment'}
-          </Button>
-          <Button type="button" variant="secondary" onClick={onClose}>
+    <Modal
+      title={isRefund ? 'Issue refund' : 'Record payment'}
+      description={`Order ${orderLabel} · ${isRefund ? 'Return money to the customer' : 'Apply a payment to this order'}`}
+      onClose={onClose}
+      tone={isRefund ? 'warning' : 'success'}
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
+          <Button
+            type="submit"
+            form="payment-form"
+            variant={isRefund ? 'secondary' : 'primary'}
+            isLoading={isSubmitting}
+            disabled={maxAmount <= 0}
+          >
+            {isRefund ? 'Confirm refund' : 'Record payment'}
+          </Button>
         </div>
+      }
+    >
+      <form id="payment-form" onSubmit={onSubmit} className="flex flex-col gap-5">
+        <div className="rounded-md border border-border bg-surfaceMuted/30 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-muted">Order summary</p>
+            <p className="text-xs text-mutedForeground">{order.items.length} items</p>
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-muted">Total</p>
+              <p className="tabular-nums font-medium text-foreground">{money(order.totalAmount)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Paid</p>
+              <p className="tabular-nums font-medium text-foreground">{money(order.amountPaid)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">{isRefund ? 'Refundable' : 'Balance due'}</p>
+              <p className={`tabular-nums font-semibold ${isRefund ? 'text-warningInk' : 'text-accentInk'}`}>
+                {money(maxAmount)}
+              </p>
+            </div>
+          </div>
+
+          {!isRefund ? (
+            <div className="mt-3">
+              <div className="h-1.5 overflow-hidden rounded-full bg-surfaceMuted">
+                <div
+                  className="h-full rounded-full bg-accent transition-all"
+                  style={{ width: `${paidPercent}%` }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-muted">{paidPercent.toFixed(0)}% paid</p>
+            </div>
+          ) : null}
+        </div>
+
+        <FormField
+          label={isRefund ? 'Refund amount' : 'Payment amount'}
+          error={errors.amount?.message}
+        >
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0.01}
+                step="0.01"
+                {...register('amount', {
+                  required: 'Amount is required',
+                  min: { value: 0.01, message: 'Must be greater than 0' },
+                  max: { value: maxAmount, message: `Cannot exceed ${money(maxAmount)}` },
+                  valueAsNumber: true,
+                })}
+              />
+              <Button type="button" variant="secondary" size="sm" onClick={fillMaxAmount} disabled={maxAmount <= 0}>
+                {isRefund ? 'All paid' : 'Full balance'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted">
+              Max {money(maxAmount)}
+              {amount > 0 ? ` · You’re entering ${money(amount)}` : null}
+            </p>
+          </div>
+        </FormField>
+
+        <OptionPicker
+          label="Payment method"
+          value={method}
+          options={METHOD_OPTIONS}
+          onChange={(value) => setValue('method', value, { shouldDirty: true })}
+        />
+
+        <FormField label="Note (optional)">
+          <textarea
+            rows={3}
+            placeholder={isRefund ? 'Reason for refund…' : 'Receipt number, reference, etc.'}
+            className="w-full resize-none rounded-lg border border-borderInput bg-surfaceInput px-3 py-2.5 text-sm text-foreground shadow-xs outline-none transition-all placeholder:text-mutedForeground focus:border-accent focus:ring-2 focus:ring-accent/20"
+            {...register('note')}
+          />
+        </FormField>
       </form>
     </Modal>
   );

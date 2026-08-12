@@ -1,9 +1,6 @@
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
-import { Spinner } from '../../components/ui/Spinner';
-import { EmptyState } from '../../components/ui/EmptyState';
-import { IconChevronLeft } from '../../components/ui/Icons';
+import { FormPageShell, FormSection } from '../../components/ui/FormLayout';
 import { formatCurrency } from '../../lib/format-currency';
 import { CustomerPicker } from './order-form/CustomerPicker';
 import { DueDatePicker } from './order-form/DueDatePicker';
@@ -15,38 +12,16 @@ export function OrderFormPage() {
   const form = useOrderForm();
   useDocumentTitle(form.isEditMode ? 'Edit order' : 'Add order');
 
-  if (form.isLoading) {
-    return (
-      <div className="flex min-h-[320px] items-center justify-center rounded-lg border border-border bg-surface shadow-xs">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (form.isNotFound) {
-    return <EmptyState title="Order not found" description="This order may have been removed." />;
-  }
-
   return (
-    <div className="flex flex-col gap-5">
-      <button
-        type="button"
-        onClick={form.goBack}
-        className="flex w-fit items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
-      >
-        <IconChevronLeft className="h-4 w-4" />
-        Back to orders
-      </button>
-
-      <PageHeader
-        title={form.isEditMode ? 'Edit order' : 'Add order'}
-        description={
-          form.isEditMode ? "Update this order's details." : 'Create a new order for a customer.'
-        }
-      />
-
+    <FormPageShell
+      title={form.isEditMode ? 'Edit order' : 'Add order'}
+      description={form.isEditMode ? "Update this order's details." : 'Create a new order for a customer.'}
+      back={{ label: 'Back to orders', onClick: form.goBack }}
+      isLoading={form.isLoading}
+      notFound={form.isNotFound ? { title: 'Order not found', description: 'This order may have been removed.' } : undefined}
+    >
       <form onSubmit={form.onSubmit} className="flex max-w-2xl flex-col gap-5">
-        <section className="flex flex-col gap-4 rounded-md border border-border bg-surface p-4">
+        <FormSection>
           <CustomerPicker
             customers={form.customers}
             value={form.watchedUserId}
@@ -61,7 +36,7 @@ export function OrderFormPage() {
             onPresetChange={form.setDueDateFromPreset}
             onCustomDateChange={form.setDueDate}
           />
-        </section>
+        </FormSection>
 
         <section className="flex flex-col gap-3">
           <p className="text-xs font-medium text-muted">Items · click to add</p>
@@ -114,6 +89,6 @@ export function OrderFormPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </FormPageShell>
   );
 }
