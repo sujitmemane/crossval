@@ -48,7 +48,7 @@ export function ItemsPage() {
     limit: PAGE_SIZE,
   };
 
-  const { data, isLoading, isFetching, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: itemsQueryKeys.list(listParams),
     queryFn: () => itemsApi.list(listParams).then((res) => res.data),
     placeholderData: keepPreviousData,
@@ -99,7 +99,11 @@ export function ItemsPage() {
           <Spinner size="lg" />
         </Card>
       ) : isError ? (
-        <EmptyState title="Couldn't load items" description={error instanceof ApiError ? error.message : undefined} />
+        <EmptyState
+          title="Couldn't load items"
+          description={error instanceof ApiError ? error.message : undefined}
+          onRetry={() => refetch()}
+        />
       ) : isCatalogEmpty ? (
         <EmptyState
           title="No items yet"

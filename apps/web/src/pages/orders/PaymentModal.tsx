@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -8,6 +9,7 @@ import { formatCurrency } from '../../lib/format-currency';
 import { formatOrderLabel } from '../../lib/format-order-id';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
 import { Button } from '../../components/ui/Button';
 import { FormField, OptionPicker } from '../../components/ui/FormLayout';
 import type { TransactionMethod, TransactionType } from '../../types/transaction';
@@ -44,6 +46,9 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
   const maxAmount = isRefund ? order.amountPaid : balanceDue;
   const orderLabel = formatOrderLabel(order._id);
 
+  const [confirmRefund, setConfirmRefund] = useState(false);
+  const [pendingValues, setPendingValues] = useState<PaymentFormValues | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -59,7 +64,7 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
 
   const createTransaction = useMutation({ mutationFn: transactionsApi.create });
 
-  const onSubmit = handleSubmit(async (values) => {
+  const submitTransaction = async (values: PaymentFormValues) => {
     try {
       const response = await createTransaction.mutateAsync({
         orderId: order._id,
@@ -82,6 +87,15 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
     }
+  };
+
+  const onSubmit = handleSubmit(async (values) => {
+    if (isRefund && !confirmRefund) {
+      setPendingValues(values);
+      setConfirmRefund(true);
+      return;
+    }
+    await submitTransaction(values);
   });
 
   const fillMaxAmount = () => {
@@ -89,6 +103,49 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
   };
 
   const paidPercent = order.totalAmount > 0 ? Math.min(100, (order.amountPaid / order.totalAmount) * 100) : 0;
+
+  if (confirmRefund && pendingValues) {
+    return (
+      <Modal
+        title="Confirm refund"
+        description={`You are about to refund ${money(pendingValues.amount)} on order ${orderLabel}.`}
+        onClose={() => {
+          setConfirmRefund(false);
+          setPendingValues(null);
+        }}
+        tone="warning"
+        size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setConfirmRefund(false);
+                setPendingValues(null);
+              }}
+            >
+              Go back
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              isLoading={isSubmitting}
+              onClick={() => submitTransaction(pendingValues)}
+            >
+              Yes, issue refund
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-muted">
+          This will reduce the amount paid on the order and cannot be undone from here. Make sure the refund amount is
+          correct before continuing.
+        </p>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
@@ -108,7 +165,7 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
             isLoading={isSubmitting}
             disabled={maxAmount <= 0}
           >
-            {isRefund ? 'Confirm refund' : 'Record payment'}
+            {isRefund ? 'Review refund' : 'Record payment'}
           </Button>
         </div>
       }
@@ -186,10 +243,9 @@ export function PaymentModal({ order, type, onClose }: PaymentModalProps) {
         />
 
         <FormField label="Note (optional)">
-          <textarea
+          <Textarea
             rows={3}
             placeholder={isRefund ? 'Reason for refund…' : 'Receipt number, reference, etc.'}
-            className="w-full resize-none rounded-lg border border-borderInput bg-surfaceInput px-3 py-2.5 text-sm text-foreground shadow-xs outline-none transition-all placeholder:text-mutedForeground focus:border-accent focus:ring-2 focus:ring-accent/20"
             {...register('note')}
           />
         </FormField>

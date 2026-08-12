@@ -75,7 +75,7 @@ export function Sidebar() {
         </button>
       </aside>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-background px-2 py-2 md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-background px-1 py-2 md:hidden">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -84,16 +84,27 @@ export function Sidebar() {
               to={item.to}
               end={item.to === paths.dashboard.home}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium ${
+                `flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-medium ${
                   isActive ? 'text-accent' : 'text-muted'
                 }`
               }
             >
-              <Icon className="h-5 w-5" />
-              {item.label}
+              <Icon className="h-5 w-5 shrink-0" />
+              <span className="truncate">{item.label}</span>
             </NavLink>
           );
         })}
+        <NavLink
+          to={paths.dashboard.profile}
+          className={({ isActive }) =>
+            `flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-medium ${
+              isActive ? 'text-accent' : 'text-muted'
+            }`
+          }
+        >
+          <IconProfile className="h-5 w-5 shrink-0" />
+          <span className="truncate">Profile</span>
+        </NavLink>
       </nav>
     </>
   );

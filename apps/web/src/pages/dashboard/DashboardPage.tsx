@@ -33,14 +33,15 @@ function StatTile({
   label: string;
   value: string;
   hint?: string;
-  tone?: 'neutral' | 'danger';
+  tone?: 'neutral' | 'danger' | 'accent';
 }) {
+  const valueClass =
+    tone === 'danger' ? 'text-danger' : tone === 'accent' ? 'text-accentInk' : 'text-foreground';
+
   return (
     <div className="rounded-xl border border-border bg-surface px-4 py-3.5 shadow-xs">
       <p className="text-xs font-medium text-muted">{label}</p>
-      <p className={`mt-1 text-lg font-semibold tracking-tight ${tone === 'danger' ? 'text-danger' : 'text-foreground'}`}>
-        {value}
-      </p>
+      <p className={`mt-1 text-lg font-semibold tracking-tight ${valueClass}`}>{value}</p>
       {hint ? <p className="mt-0.5 text-xs text-mutedForeground">{hint}</p> : null}
     </div>
   );
@@ -66,7 +67,7 @@ export function DashboardPage() {
   const { data: organization } = useOrganization();
   const currency = organization?.currency ?? 'USD';
 
-  const { data: stats, isLoading: isLoadingStats, isError: isStatsError, error: statsError } = useQuery({
+  const { data: stats, isLoading: isLoadingStats, isError: isStatsError, error: statsError, refetch } = useQuery({
     queryKey: ['orders', 'stats'],
     queryFn: () => ordersApi.stats().then((res) => res.data),
   });
@@ -90,11 +91,9 @@ export function DashboardPage() {
       />
 
       <section className="flex flex-col gap-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Quick actions</h2>
-            <p className="mt-0.5 text-sm text-muted">Create something new — or press the key anywhere.</p>
-          </div>
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Quick actions</h2>
+          <p className="mt-0.5 text-sm text-muted">Create something new — or press the key anywhere.</p>
         </div>
 
         <div className={`grid grid-cols-1 gap-3 ${visibleShortcuts.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
@@ -130,6 +129,7 @@ export function DashboardPage() {
         <EmptyState
           title="Couldn't load stats"
           description={statsError instanceof ApiError ? statsError.message : undefined}
+          onRetry={() => refetch()}
         />
       ) : stats ? (
         <section className="flex flex-col gap-4">
@@ -167,18 +167,22 @@ export function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <StatTile label="Total orders" value={formatCount(stats.totalOrders)} hint="Active in ledger" />
+            <StatTile label="Total orders" value={formatCount(stats.totalOrders)} hint="In your ledger" />
             <StatTile
               label="Overdue amount"
               value={money(stats.overdueAmount)}
               hint={`${formatCount(stats.overdueOrders)} overdue orders`}
               tone="danger"
             />
-            <StatTile label="Outstanding" value={money(stats.amountDue)} hint={`Currency: ${currency}`} />
+            <StatTile
+              label="Collection rate"
+              value={formatPercent(collectionRate)}
+              hint={`${money(stats.totalCollected, true)} collected`}
+              tone="accent"
+            />
           </div>
         </section>
       ) : null}
-
     </div>
   );
 }

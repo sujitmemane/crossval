@@ -1,6 +1,6 @@
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Button } from '../../components/ui/Button';
-import { FormPageShell, FormSection } from '../../components/ui/FormLayout';
+import { FormActions, FormPageShell, FormSection } from '../../components/ui/FormLayout';
 import { formatCurrency } from '../../lib/format-currency';
 import { CustomerPicker } from './order-form/CustomerPicker';
 import { DueDatePicker } from './order-form/DueDatePicker';
@@ -21,7 +21,7 @@ export function OrderFormPage() {
       notFound={form.isNotFound ? { title: 'Order not found', description: 'This order may have been removed.' } : undefined}
     >
       <form onSubmit={form.onSubmit} className="flex max-w-2xl flex-col gap-5">
-        <FormSection>
+        <FormSection title="Customer & due date">
           <CustomerPicker
             customers={form.customers}
             value={form.watchedUserId}
@@ -38,13 +38,10 @@ export function OrderFormPage() {
           />
         </FormSection>
 
-        <section className="flex flex-col gap-3">
-          <p className="text-xs font-medium text-muted">Items · click to add</p>
-
-          {form.itemsLocked ? (
-            <p className="text-xs text-muted">This order is fully paid, so its items can no longer be changed.</p>
-          ) : null}
-
+        <FormSection
+          title="Line items"
+          description={form.itemsLocked ? 'This order is fully paid, so its items can no longer be changed.' : 'Click items below to add them to the order.'}
+        >
           <ItemPicker
             items={form.items}
             orderLines={form.orderLines}
@@ -67,27 +64,23 @@ export function OrderFormPage() {
           {form.errors.items?.message ? (
             <p className="text-xs text-danger">{form.errors.items.message as string}</p>
           ) : null}
-        </section>
+        </FormSection>
 
-        <div className="flex items-center justify-between rounded-md border border-border px-4 py-3">
-          <p className="text-xs font-medium text-muted">Total</p>
+        <div className="flex items-center justify-between rounded-md border border-border bg-surfaceMuted/30 px-4 py-3">
+          <p className="text-xs font-medium text-muted">Order total</p>
           <p className="tabular-nums text-base font-semibold text-foreground">
             {formatCurrency(form.orderTotal, form.currency)}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            type="submit"
-            isLoading={form.isSubmitting}
-            disabled={form.customers.length === 0 || form.items.length === 0}
-          >
+        <FormActions>
+          <Button type="submit" isLoading={form.isSubmitting}>
             {form.isEditMode ? 'Save changes' : 'Create order'}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={form.goBack}>
             Cancel
           </Button>
-        </div>
+        </FormActions>
       </form>
     </FormPageShell>
   );

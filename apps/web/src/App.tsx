@@ -13,12 +13,22 @@ const queryClient = new QueryClient({
   },
 });
 
+const toastClassName =
+  '!rounded-lg !border !border-border !bg-surface !text-foreground !text-sm !shadow-sm';
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RouterProvider router={router} />
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            className: toastClassName,
+            success: { iconTheme: { primary: '#3DBE6A', secondary: '#FAFAF9' } },
+            error: { iconTheme: { primary: '#DC2626', secondary: '#FAFAF9' } },
+          }}
+        />
       </AuthProvider>
     </QueryClientProvider>
   );

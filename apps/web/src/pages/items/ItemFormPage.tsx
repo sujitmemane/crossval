@@ -9,6 +9,7 @@ import { ApiError } from '../../lib/api-client';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
 import { Button } from '../../components/ui/Button';
 import { FormActions, FormField, FormPageShell, FormSection, OptionPicker } from '../../components/ui/FormLayout';
 import type { CreateItemPayload, ItemStatus } from '../../types/item';
@@ -111,7 +112,7 @@ export function ItemFormPage() {
           </FormField>
 
           <FormField label="Description" error={errors.description?.message}>
-            <Input {...register('description')} placeholder="Optional short description" />
+            <Textarea rows={3} {...register('description')} placeholder="Optional short description" />
           </FormField>
         </FormSection>
 

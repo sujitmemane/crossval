@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { ButtonLink } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { paths } from '../../../routes/paths';
 import type { OrgUser } from '../../../types/user';
 import { getInitials } from './utils';
 
@@ -47,7 +49,12 @@ export function CustomerPicker({ customers, value, error, onSelect }: CustomerPi
           </button>
         </div>
       ) : customers.length === 0 ? (
-        <p className="text-xs text-muted">No customers yet. Add one from the Users page first.</p>
+        <div className="rounded-md border border-dashed border-border bg-surfaceMuted/30 px-3 py-4 text-center">
+          <p className="text-xs text-muted">No customers yet. Add one to assign this order.</p>
+          <ButtonLink to={paths.dashboard.usersNew} size="sm" className="mt-3">
+            Add customer
+          </ButtonLink>
+        </div>
       ) : (
         <>
           <Input

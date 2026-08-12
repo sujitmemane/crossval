@@ -5,13 +5,32 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { LayoutProvider } from '../components/layout/LayoutContext';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
+const SIDEBAR_KEY = 'settle-sidebar-expanded';
+
+function readSidebarPreference() {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 export function AppLayout() {
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(readSidebarPreference);
 
   useKeyboardShortcuts();
 
+  const setSidebarExpandedPersisted = (expanded: boolean) => {
+    setSidebarExpanded(expanded);
+    try {
+      localStorage.setItem(SIDEBAR_KEY, String(expanded));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
   return (
-    <LayoutProvider sidebarExpanded={sidebarExpanded} setSidebarExpanded={setSidebarExpanded}>
+    <LayoutProvider sidebarExpanded={sidebarExpanded} setSidebarExpanded={setSidebarExpandedPersisted}>
       <div className="flex min-h-screen bg-background">
         <Sidebar />
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
