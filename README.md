@@ -299,5 +299,5 @@ Mapping this assignment to CrossVal's production bar:
 ---
 
 ## Author
-
+Sujit Memane
 Built as a take-home assignment for CrossVal's Backend / Full-Stack Developer role.
