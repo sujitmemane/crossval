@@ -1,4 +1,4 @@
-# Settle — CrossVal Backend / Full-Stack Assignment
+# CrossVal Backend / Full-Stack Assignment
 
 A multi-tenant order and payment management platform built for the [CrossVal](https://crossval.com) Backend / Full-Stack Developer assignment. It models a slice of what CrossVal does in production: **financial operations where correctness, auditability, and end-to-end ownership matter**.
 
