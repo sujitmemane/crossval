@@ -47,15 +47,221 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-### 3. Try the flow
+### 3. Test the product
 
-1. **Sign up** as an admin — this creates your organization.
-2. Add **items** to the catalog and **customers** (users with role `CUSTOMER`).
-3. Create an **order**, record a **payment**, issue a **refund** if needed.
-4. Open the order drawer to see **transactions** and the **audit trail**.
-5. Export orders as **CSV** from the Orders page.
+Follow **[Testing Workflow](#testing-workflow)** below. Import `apps/api/postman/Settle-API.postman_collection.json` for the API-only checks (overpayment and payment idempotency). Tokens and entity IDs are captured automatically between requests.
 
-Import `apps/api/postman/Settle-API.postman_collection.json` to exercise the API without the UI. Tokens and entity IDs are captured automatically between requests.
+---
+
+## Testing Workflow
+
+Use this as a reviewer script. The happy path is in the UI; overpayment and idempotency are easiest to prove in Postman because the payment modal blocks invalid amounts and generates a new idempotency key on every submit.
+
+Suggested sample data: two catalog items at **300** and **200** (order total **500**), then a partial payment of **200**.
+
+Drop captures into `docs/screenshots/` using the filenames below. GitHub will render them here once the files exist.
+
+| File | What to capture |
+| --- | --- |
+| `01-signup.png` | Sign-up form (org + admin) |
+| `02-dashboard-empty.png` | Dashboard right after signup (zeros) |
+| `03-dashboard-activity.png` | Dashboard after orders/payments (collection + overdue) |
+| `04-catalog.png` | Items list with two catalog items |
+| `05-item-form.png` | Add/edit item form |
+| `06-users.png` | Users list with a customer |
+| `07-order-form.png` | New order form with customer + line items + total 500 |
+| `08-orders-pending.png` | Orders list, status **Pending** |
+| `09-drawer-pending.png` | Order drawer overview — unpaid, balance 500 |
+| `10-payment-modal.png` | Record payment modal (amount 200, max 500) |
+| `11-orders-partial.png` | Orders list, status **Partially paid** |
+| `12-drawer-partial.png` | Drawer after payment — paid 200, due 300 |
+| `13-postman-overpay.png` | Postman overpayment rejected |
+| `14-postman-idempotent-1.png` | First payment with fixed idempotency key (created) |
+| `15-postman-idempotent-2.png` | Same request replayed (existing transaction returned) |
+| `16-refund-modal.png` | Issue refund modal + confirm step |
+| `17-drawer-audit.png` | Order drawer **Audit** tab (create, payment, refund) |
+| `18-orders-paid.png` | Orders list, status **Paid**; Pay disabled |
+| `19-order-edit-locked.png` | Edit screen on a fully paid order (items/customer locked) |
+| `20-orders-overdue.png` | Orders list, status **Overdue** |
+| `21-dashboard-overdue.png` | Dashboard overdue amount / count |
+| `22-csv-export.png` | Orders page export bar / downloaded CSV |
+
+### 1. Sign up and land on the dashboard
+
+1. Open `http://localhost:5173` (or the deployed Vercel URL).
+2. Go to **Create account**.
+3. Fill in:
+   - Organization name
+   - Country (`US`) and currency (`USD`)
+   - Your name, email, and a password (min 8 characters)
+4. Submit.
+
+**Expect:** you are signed in as an admin and redirected to **Dashboard**. Collection and overdue stats start at zero. Quick actions are available for orders, items, and users.
+
+![Sign up](docs/screenshots/01-signup.png)
+
+![Dashboard — empty](docs/screenshots/02-dashboard-empty.png)
+
+### 2. Catalog
+
+1. Open **Items** → **Add item**.
+2. Create item A: name `Consulting`, rate `300`, status **Available**.
+3. Create item B: name `Setup fee`, rate `200`, status **Available**.
+
+**Expect:** both items appear in the catalog. Later, if you change an item's rate, existing orders keep the rate that was snapshotted at order time.
+
+![Add item form](docs/screenshots/05-item-form.png)
+
+![Catalog](docs/screenshots/04-catalog.png)
+
+### 3. Customer
+
+1. Open **Users** → **Add user**.
+2. Create a user with role **Customer** (name + unique email).
+3. Copy the generated temporary password if you want to sign in as that customer later.
+
+**Expect:** the customer appears in the users list and is selectable when creating an order. Admins invite customers; customers do not join an existing org via self-signup.
+
+![Users / customers](docs/screenshots/06-users.png)
+
+### 4. Create an order
+
+1. Open **Orders** → **New order** (or use the dashboard shortcut).
+2. Select the customer.
+3. Add both catalog items (quantities `1` each).
+4. Leave the default due date (or pick a future date so the order stays **Pending**, not **Overdue**).
+5. Save.
+
+**Expect:**
+- Order total is **500** (sum of snapshotted line rates × quantities).
+- Status is **Pending** (`amountPaid = 0`, due date in the future).
+- Status is derived, not stored — it will change automatically after payments.
+
+Optional snapshot check: edit item A's catalog rate to `400`, then reopen the order. Line items should still show **300**.
+
+![Create order](docs/screenshots/07-order-form.png)
+
+![Orders — Pending](docs/screenshots/08-orders-pending.png)
+
+![Order drawer — Pending](docs/screenshots/09-drawer-pending.png)
+
+### 5. Partial payment
+
+1. Open the order (row click or drawer).
+2. Click **Pay** / **Record payment**.
+3. Enter **200**, pick a method (e.g. Cash), submit.
+
+**Expect:**
+- Amount paid = **200**, balance due = **300**.
+- Status becomes **Partially paid**.
+- The transaction appears on the order overview.
+
+![Payment modal](docs/screenshots/10-payment-modal.png)
+
+![Orders — Partially paid](docs/screenshots/11-orders-partial.png)
+
+![Order drawer — after payment](docs/screenshots/12-drawer-partial.png)
+
+### 6. Overpayment (backend rule)
+
+The UI will not submit an amount above the remaining balance. Use Postman (or any HTTP client) against `POST /api/transactions`.
+
+1. Sign in via the collection (**Auth → Sign In**) so the access cookie is set.
+2. Use the `orderId` from the order you just created.
+3. Send:
+
+```json
+{
+  "orderId": "<orderId>",
+  "amount": 600,
+  "type": "PAYMENT",
+  "method": "CARD",
+  "idempotencyKey": "overpay-test-1"
+}
+```
+
+**Expect:** the request is rejected (the remaining balance is 300). The order's `amountPaid` stays **200**. This is enforced in the service layer and again atomically in MongoDB (`$expr`), so two concurrent payments cannot overshoot the total.
+
+![Postman — overpayment rejected](docs/screenshots/13-postman-overpay.png)
+
+### 7. Payment idempotency (Postman)
+
+1. Send a valid payment once, with a **fixed** key (do not use `{{$guid}}` for this check):
+
+```json
+{
+  "orderId": "<orderId>",
+  "amount": 50,
+  "type": "PAYMENT",
+  "method": "CARD",
+  "note": "Idempotency demo",
+  "idempotencyKey": "pay-retry-demo-1"
+}
+```
+
+**Expect:** transaction created; `amountPaid` increases by **50**.
+
+2. Send the **exact same body** again (same `idempotencyKey`).
+
+**Expect:** no second payment. The API returns the existing transaction (`Transaction already processed`) and the order balance is unchanged.
+
+The unique index is `(organizationId, idempotencyKey)`, so the same key can be reused in a different org but never double-applies inside one org.
+
+![Postman — first payment](docs/screenshots/14-postman-idempotent-1.png)
+
+![Postman — replay same key](docs/screenshots/15-postman-idempotent-2.png)
+
+### 8. Refund + audit trail
+
+**In the UI**
+
+1. Open the same order → **Refund** / **Issue refund**.
+2. Enter an amount **less than** amount paid (e.g. **50**).
+3. Confirm the refund.
+
+**Expect:** `amountPaid` decreases, status updates (still **Partially paid** if a balance remains), and you cannot refund more than has been collected (UI max + API guard).
+
+**Audit**
+
+1. In the order drawer, open the **Audit** tab.
+
+**Expect:** append-only events for order creation, payment received, and refund — not only the current balances.
+
+![Refund modal](docs/screenshots/16-refund-modal.png)
+
+![Audit trail](docs/screenshots/17-drawer-audit.png)
+
+### 9. Optional checks
+
+| Check | How | Expect |
+| --- | --- | --- |
+| Fully paid | Pay the remaining balance | Status **Paid**; Pay is disabled; line items/customer are locked on edit |
+| Overdue | Create an order with a **past** due date and no payment | Status **Overdue**; dashboard overdue stats increment |
+| Paid wins over overdue | Fully pay that overdue order | Status **Paid**, never overdue |
+| Edit below paid amount | Edit a partially paid order and drop the total under `amountPaid` | Rejected |
+| CSV export | Orders page → date range → export | Download includes orders in that `createdAt` range |
+| Multi-tenancy | Sign up a second admin (new org) and try the first org's `orderId` in Postman | `404` / no access — queries are scoped by `organizationId` from the JWT |
+
+![Orders — Paid](docs/screenshots/18-orders-paid.png)
+
+![Edit locked when fully paid](docs/screenshots/19-order-edit-locked.png)
+
+![Orders — Overdue](docs/screenshots/20-orders-overdue.png)
+
+![Dashboard — overdue activity](docs/screenshots/21-dashboard-overdue.png)
+
+![CSV export](docs/screenshots/22-csv-export.png)
+
+After there is real activity on the org, recapture the dashboard:
+
+![Dashboard — with activity](docs/screenshots/03-dashboard-activity.png)
+
+### Postman setup
+
+1. Import `apps/api/postman/Settle-API.postman_collection.json`.
+2. Set `baseUrl` to `http://localhost:4000/api` (or your Render URL + `/api`).
+3. Run **Sign Up** or **Sign In**, then **Create Item** → **Create/Invite User** → **Create Order** → **Create Transaction**.
+4. For idempotency, replace `"idempotencyKey": "{{$guid}}"` with a hardcoded string and replay the request.
 
 ---
 
