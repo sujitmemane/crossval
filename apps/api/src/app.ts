@@ -21,6 +21,10 @@ app.get('/', (req: Request, res: Response<{ message: string }>) => {
     res.status(200).json({ message: 'Hello World' });
 });
 
+app.get('/api/health', (_req: Request, res: Response<{ status: string }>) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 app.use('/api/auth', authRouter);
 app.use('/api/items', itemRouter);
 app.use('/api/orders', orderRouter);
