@@ -6,6 +6,28 @@ Admins manage a catalog, create orders for customers, record payments and refund
 
 ---
 
+## Walkthrough
+
+The full app flow and the edge cases below are in this video — catalog, orders, payments, idempotency, refunds, audit, multi-tenancy, and auth.
+
+**[Watch the 5-minute walkthrough on Loom](https://www.loom.com/share/2818b809f18a4b66a7bcdae0070544c6)**
+
+[![Watch the 5-minute app walkthrough](https://cdn.loom.com/sessions/thumbnails/2818b809f18a4b66a7bcdae0070544c6-with-play.gif)](https://www.loom.com/share/2818b809f18a4b66a7bcdae0070544c6)
+
+| Time | What I cover |
+| --- | --- |
+| 0:00 | Intro — reliability, auditability, and financial edge cases |
+| 0:20 | Dashboard + catalog. Line-item **rate snapshot** so later price changes do not rewrite old orders |
+| 0:50 | Customer + create order. Status is **derived** (pending / partially paid / overdue / paid), not stored |
+| 1:30 | Record a payment. Remaining balance updates. **Overpayment rejected** by the API, not only the UI |
+| 2:30 | **Idempotency** — same `idempotencyKey` replayed in Postman returns the existing transaction |
+| 3:10 | Refund cannot exceed amount paid. **Audit trail** for every money-moving action |
+| 3:40 | Architecture (`route → controller → service → repository`), org-scoped queries, JWT httpOnly cookies |
+
+Flow shown: **Catalog → Customer → Order → Payment → Refund → Audit**.
+
+---
+
 ## What I Built
 
 | Area | Implementation |
@@ -47,128 +69,56 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-### 3. Test the product
+### 3. Watch, then click through
 
-Follow **[Testing Workflow](#testing-workflow)** below. Import `apps/api/postman/Settle-API.postman_collection.json` for the API-only checks (overpayment and payment idempotency). Tokens and entity IDs are captured automatically between requests.
+Start with the **[walkthrough video](https://www.loom.com/share/2818b809f18a4b66a7bcdae0070544c6)**. Reproduce it with **[Testing Workflow](#testing-workflow)**. Import `apps/api/postman/Settle-API.postman_collection.json` for overpayment and idempotency. Tokens and IDs are captured between requests.
 
 ---
 
 ## Testing Workflow
 
-Use this as a reviewer script. The happy path is in the UI; overpayment and idempotency are easiest to prove in Postman because the payment modal blocks invalid amounts and generates a new idempotency key on every submit.
+Watch the [walkthrough](https://www.loom.com/share/2818b809f18a4b66a7bcdae0070544c6) first. Use this if you want to click through the same path locally.
 
-Suggested sample data: two catalog items at **300** and **200** (order total **500**), then a partial payment of **200**.
+The UI happy path is enough for catalog → order → pay → refund → audit. **Overpayment** and **idempotency** are easiest in Postman — the payment modal caps the amount and mints a new idempotency key on every submit.
 
-Drop captures into `docs/screenshots/` using the filenames below. GitHub will render them here once the files exist.
+Suggested numbers: items at **300** and **200** (order total **500**), then a partial payment of **200**.
 
-| File | What to capture |
-| --- | --- |
-| `01-signup.png` | Sign-up form (org + admin) |
-| `02-dashboard-empty.png` | Dashboard right after signup (zeros) |
-| `03-dashboard-activity.png` | Dashboard after orders/payments (collection + overdue) |
-| `04-catalog.png` | Items list with two catalog items |
-| `05-item-form.png` | Add/edit item form |
-| `06-users.png` | Users list with a customer |
-| `07-order-form.png` | New order form with customer + line items + total 500 |
-| `08-orders-pending.png` | Orders list, status **Pending** |
-| `09-drawer-pending.png` | Order drawer overview — unpaid, balance 500 |
-| `10-payment-modal.png` | Record payment modal (amount 200, max 500) |
-| `11-orders-partial.png` | Orders list, status **Partially paid** |
-| `12-drawer-partial.png` | Drawer after payment — paid 200, due 300 |
-| `13-postman-overpay.png` | Postman overpayment rejected |
-| `14-postman-idempotent-1.png` | First payment with fixed idempotency key (created) |
-| `15-postman-idempotent-2.png` | Same request replayed (existing transaction returned) |
-| `16-refund-modal.png` | Issue refund modal + confirm step |
-| `17-drawer-audit.png` | Order drawer **Audit** tab (create, payment, refund) |
-| `18-orders-paid.png` | Orders list, status **Paid**; Pay disabled |
-| `19-order-edit-locked.png` | Edit screen on a fully paid order (items/customer locked) |
-| `20-orders-overdue.png` | Orders list, status **Overdue** |
-| `21-dashboard-overdue.png` | Dashboard overdue amount / count |
-| `22-csv-export.png` | Orders page export bar / downloaded CSV |
+### 1. Sign up → dashboard
 
-### 1. Sign up and land on the dashboard
+1. Open `http://localhost:5173` → **Create account**.
+2. Organization name, country `US`, currency `USD`, your name / email / password (min 8 chars).
 
-1. Open `http://localhost:5173` (or the deployed Vercel URL).
-2. Go to **Create account**.
-3. Fill in:
-   - Organization name
-   - Country (`US`) and currency (`USD`)
-   - Your name, email, and a password (min 8 characters)
-4. Submit.
-
-**Expect:** you are signed in as an admin and redirected to **Dashboard**. Collection and overdue stats start at zero. Quick actions are available for orders, items, and users.
-
-![Sign up](docs/screenshots/01-signup.png)
-
-![Dashboard — empty](docs/screenshots/02-dashboard-empty.png)
+**Expect:** signed in as admin on **Dashboard**. Collection and overdue stats start at zero.
 
 ### 2. Catalog
 
-1. Open **Items** → **Add item**.
-2. Create item A: name `Consulting`, rate `300`, status **Available**.
-3. Create item B: name `Setup fee`, rate `200`, status **Available**.
+**Items → Add item.** Create `Consulting` at **300** and `Setup fee` at **200**, both Available.
 
-**Expect:** both items appear in the catalog. Later, if you change an item's rate, existing orders keep the rate that was snapshotted at order time.
-
-![Add item form](docs/screenshots/05-item-form.png)
-
-![Catalog](docs/screenshots/04-catalog.png)
+**Expect:** both in the catalog. Changing a catalog rate later does **not** change rates already snapshotted on an order.
 
 ### 3. Customer
 
-1. Open **Users** → **Add user**.
-2. Create a user with role **Customer** (name + unique email).
-3. Copy the generated temporary password if you want to sign in as that customer later.
+**Users → Add user**, role **Customer**. Copy the generated temp password if you want to sign in as that user later.
 
-**Expect:** the customer appears in the users list and is selectable when creating an order. Admins invite customers; customers do not join an existing org via self-signup.
+**Expect:** customer is selectable on the order form. Self-signup does not join an existing org.
 
-![Users / customers](docs/screenshots/06-users.png)
+### 4. Create order
 
-### 4. Create an order
+**Orders → New order.** Pick the customer, add both items (qty 1), keep a **future** due date, save.
 
-1. Open **Orders** → **New order** (or use the dashboard shortcut).
-2. Select the customer.
-3. Add both catalog items (quantities `1` each).
-4. Leave the default due date (or pick a future date so the order stays **Pending**, not **Overdue**).
-5. Save.
+**Expect:** total **500**, status **Pending**. Status is derived from `amountPaid`, `totalAmount`, and `dueDate`.
 
-**Expect:**
-- Order total is **500** (sum of snapshotted line rates × quantities).
-- Status is **Pending** (`amountPaid = 0`, due date in the future).
-- Status is derived, not stored — it will change automatically after payments.
-
-Optional snapshot check: edit item A's catalog rate to `400`, then reopen the order. Line items should still show **300**.
-
-![Create order](docs/screenshots/07-order-form.png)
-
-![Orders — Pending](docs/screenshots/08-orders-pending.png)
-
-![Order drawer — Pending](docs/screenshots/09-drawer-pending.png)
+Optional: change catalog rate of item A to `400`, reopen the order — line still shows **300**.
 
 ### 5. Partial payment
 
-1. Open the order (row click or drawer).
-2. Click **Pay** / **Record payment**.
-3. Enter **200**, pick a method (e.g. Cash), submit.
+Open the order → **Pay** → amount **200**.
 
-**Expect:**
-- Amount paid = **200**, balance due = **300**.
-- Status becomes **Partially paid**.
-- The transaction appears on the order overview.
+**Expect:** paid **200**, balance **300**, status **Partially paid**, transaction on the overview.
 
-![Payment modal](docs/screenshots/10-payment-modal.png)
+### 6. Overpayment (Postman)
 
-![Orders — Partially paid](docs/screenshots/11-orders-partial.png)
-
-![Order drawer — after payment](docs/screenshots/12-drawer-partial.png)
-
-### 6. Overpayment (backend rule)
-
-The UI will not submit an amount above the remaining balance. Use Postman (or any HTTP client) against `POST /api/transactions`.
-
-1. Sign in via the collection (**Auth → Sign In**) so the access cookie is set.
-2. Use the `orderId` from the order you just created.
-3. Send:
+UI will not allow this. `POST /api/transactions`:
 
 ```json
 {
@@ -180,13 +130,11 @@ The UI will not submit an amount above the remaining balance. Use Postman (or an
 }
 ```
 
-**Expect:** the request is rejected (the remaining balance is 300). The order's `amountPaid` stays **200**. This is enforced in the service layer and again atomically in MongoDB (`$expr`), so two concurrent payments cannot overshoot the total.
+**Expect:** rejected. `amountPaid` stays **200**. Same rule is applied in the domain layer and again atomically in MongoDB (`$expr` on `amountPaid`).
 
-![Postman — overpayment rejected](docs/screenshots/13-postman-overpay.png)
+### 7. Idempotency (Postman)
 
-### 7. Payment idempotency (Postman)
-
-1. Send a valid payment once, with a **fixed** key (do not use `{{$guid}}` for this check):
+Use a **fixed** key (not `{{$guid}}`):
 
 ```json
 {
@@ -199,69 +147,33 @@ The UI will not submit an amount above the remaining balance. Use Postman (or an
 }
 ```
 
-**Expect:** transaction created; `amountPaid` increases by **50**.
+Send once → transaction created. Send the **same body** again.
 
-2. Send the **exact same body** again (same `idempotencyKey`).
+**Expect:** `Transaction already processed`; balance unchanged. Unique index is `(organizationId, idempotencyKey)`.
 
-**Expect:** no second payment. The API returns the existing transaction (`Transaction already processed`) and the order balance is unchanged.
+### 8. Refund + audit
 
-The unique index is `(organizationId, idempotencyKey)`, so the same key can be reused in a different org but never double-applies inside one org.
+Order drawer → **Refund** (e.g. **50**) → confirm. Then open the **Audit** tab.
 
-![Postman — first payment](docs/screenshots/14-postman-idempotent-1.png)
+**Expect:** `amountPaid` drops; refund cannot exceed collected funds. Audit lists create / payment / refund, not only current balances.
 
-![Postman — replay same key](docs/screenshots/15-postman-idempotent-2.png)
-
-### 8. Refund + audit trail
-
-**In the UI**
-
-1. Open the same order → **Refund** / **Issue refund**.
-2. Enter an amount **less than** amount paid (e.g. **50**).
-3. Confirm the refund.
-
-**Expect:** `amountPaid` decreases, status updates (still **Partially paid** if a balance remains), and you cannot refund more than has been collected (UI max + API guard).
-
-**Audit**
-
-1. In the order drawer, open the **Audit** tab.
-
-**Expect:** append-only events for order creation, payment received, and refund — not only the current balances.
-
-![Refund modal](docs/screenshots/16-refund-modal.png)
-
-![Audit trail](docs/screenshots/17-drawer-audit.png)
-
-### 9. Optional checks
+### 9. Other states to try
 
 | Check | How | Expect |
 | --- | --- | --- |
-| Fully paid | Pay the remaining balance | Status **Paid**; Pay is disabled; line items/customer are locked on edit |
-| Overdue | Create an order with a **past** due date and no payment | Status **Overdue**; dashboard overdue stats increment |
-| Paid wins over overdue | Fully pay that overdue order | Status **Paid**, never overdue |
-| Edit below paid amount | Edit a partially paid order and drop the total under `amountPaid` | Rejected |
-| CSV export | Orders page → date range → export | Download includes orders in that `createdAt` range |
-| Multi-tenancy | Sign up a second admin (new org) and try the first org's `orderId` in Postman | `404` / no access — queries are scoped by `organizationId` from the JWT |
+| Fully paid | Pay remaining balance | **Paid**; Pay disabled; items/customer locked on edit |
+| Overdue | Order with a **past** due date, unpaid | **Overdue**; dashboard overdue stats increment |
+| Paid vs overdue | Fully pay that overdue order | **Paid** wins — never shown as overdue |
+| Edit below paid | Drop line-item total under `amountPaid` | Rejected |
+| CSV export | Orders page → date range | Rows filtered by `createdAt` |
+| Cross-org | Second admin org hits the first org's `orderId` | `404` — queries scoped by JWT `organizationId` |
 
-![Orders — Paid](docs/screenshots/18-orders-paid.png)
-
-![Edit locked when fully paid](docs/screenshots/19-order-edit-locked.png)
-
-![Orders — Overdue](docs/screenshots/20-orders-overdue.png)
-
-![Dashboard — overdue activity](docs/screenshots/21-dashboard-overdue.png)
-
-![CSV export](docs/screenshots/22-csv-export.png)
-
-After there is real activity on the org, recapture the dashboard:
-
-![Dashboard — with activity](docs/screenshots/03-dashboard-activity.png)
-
-### Postman setup
+### Postman
 
 1. Import `apps/api/postman/Settle-API.postman_collection.json`.
-2. Set `baseUrl` to `http://localhost:4000/api` (or your Render URL + `/api`).
-3. Run **Sign Up** or **Sign In**, then **Create Item** → **Create/Invite User** → **Create Order** → **Create Transaction**.
-4. For idempotency, replace `"idempotencyKey": "{{$guid}}"` with a hardcoded string and replay the request.
+2. `baseUrl` = `http://localhost:4000/api` (or Render URL + `/api`).
+3. Sign Up / Sign In → Create Item → Invite User → Create Order → Create Transaction.
+4. For idempotency, hardcode `idempotencyKey` and replay.
 
 ---
 
@@ -391,46 +303,82 @@ These are deliberate simplifications for the assignment scope:
 
 ## Edge Cases Handled
 
-### Financial correctness
+These are the cases the walkthrough and domain layer are built around. Pure rules live in `apps/api/src/domain/` so they can be reasoned about without HTTP or Mongo.
+
+### Auth
 
 | Scenario | Handling |
 | --- | --- |
-| Overpayment | Rejected in service layer **and** atomically blocked in MongoDB via `$expr` on `applyOrderPayment` |
-| Over-refund | Same dual-layer guard for refunds |
-| Concurrent duplicate payment | Unique idempotency index + duplicate-key catch returns the original transaction |
-| Idempotent retry | Same `idempotencyKey` → `200` with existing transaction and current order status |
-| Edit order below paid amount | Blocked: new total must be ≥ `amountPaid` |
-| Edit fully paid order | Blocked at API; UI locks item/customer fields |
-| Unavailable catalog item on order | Rejected at create/update with a clear error |
-| Missing or cross-org item IDs | Rejected; duplicate item IDs in payload deduped via `Set` size check |
+| Duplicate signup email | `409 Email already in use` |
+| Wrong password / unknown email | Same `401 Invalid email or password` (no user enumeration on sign-in) |
+| Missing access cookie / Bearer token | `401 Authentication token missing` |
+| Expired or tampered access JWT | `401`; web client refreshes once via httpOnly **refresh** cookie, then retries |
+| Missing / invalid / expired refresh token | `401 Invalid or expired refresh token` |
+| Refresh for a deleted user | Refresh looks the user up again; fails closed |
+| Customer with no `organizationId` | `403` on org-scoped routes (`requireOrganization`) |
+| Non-admin hitting user-admin routes | `403` via `requireRole('ADMIN')` |
+| Forgot password for unknown email | `404` on that path; reset token is 32-byte random, TTL **10 minutes**, cleared after use |
+| Expired / reused reset link | `400 Invalid or expired reset link` |
+| Cross-site cookies (Vercel → Render) | Production cookies are `httpOnly`, `Secure`, `SameSite=None` so the access token is sent on credentialed API calls |
+| Password change | Current password must match; new password hashed with bcrypt |
 
-### Data integrity
+Tokens are not stored in `localStorage`. Access + refresh go in httpOnly cookies; CORS uses the exact `FRONTEND_URL` with `credentials: true`.
+
+### Multi-tenancy
 
 | Scenario | Handling |
 | --- | --- |
-| Order create + audit log | Wrapped in a MongoDB transaction session |
-| Payment + audit log + status change log | Single transaction; rolls back on any failure |
-| Rate changes after order creation | Snapshotted `rate` on order lines preserves historical totals |
+| Org A reads Org B's order / item / user | Every repository query includes `organizationId` from the JWT — result is `404`, not another tenant's row |
+| Item IDs from another org on create-order | `One or more items not found` — lookup is org-scoped |
+| Reassign order to a user in another org | `User not found` |
+| Idempotency key reused in a **different** org | Allowed — unique index is `(organizationId, idempotencyKey)` |
+| Admin signup | Creates a **new** organization; customer self-signup does not join an existing org |
+
+### Domain — orders
+
+Status is **computed at read time** in `deriveOrderStatus` (`PAID` → `OVERDUE` → `PARTIALLY_PAID` → `PENDING`). It is not persisted, so concurrent payments cannot leave a stale status on the document.
+
+| Scenario | Handling |
+| --- | --- |
+| Catalog price changes after order create | Line `rate` is snapshotted; historical totals stay put |
+| Unavailable catalog item on create/update | Rejected with the item name |
+| Duplicate item IDs in the payload | Caught via `Set` size vs found count |
+| Missing / foreign item IDs | Rejected |
+| Fully paid order — edit items or customer | `isOrderUpdateAllowed` is false; API `400`; UI locks those fields |
+| New line-item total **below** `amountPaid` | Blocked — you cannot shrink the receivable under collected funds |
+| Due date only change on a paid order | Allowed (does not change money); still audit-logged |
+| Paid order whose due date is in the past | **Paid wins** — never shown as overdue |
+| Unpaid / partial, due date in the past | **Overdue**, including when `amountPaid > 0` |
+| Create order + audit `ORDER_CREATED` | Same Mongo session; abort rolls both back |
+
+### Domain — payments & refunds
+
+`isPaymentAllowed` / `isRefundAllowed` run first. `applyOrderPayment` then updates with a Mongo `$expr` so `0 ≤ amountPaid + delta ≤ totalAmount` even if two requests race.
+
+| Scenario | Handling |
+| --- | --- |
+| Pay more than remaining balance | Rejected in domain **and** `$expr` (walkthrough overpay demo) |
+| Refund more than `amountPaid` | Same dual-layer guard |
+| Two payments in flight that would overshoot | Second `findOneAndUpdate` matches 0 docs → `400`; no overpay |
+| Client retries the same payment (network blip) | Same `idempotencyKey` → existing txn returned, balance unchanged |
+| Two retries racing to insert | Unique index `11000` → catch and replay the winner |
+| Payment / refund + audit + status-change log | One Mongo transaction; any failure aborts all three |
+| Status change after payment | Extra audit event `ORDER_<NEW_STATUS>` with `{ from, to }` |
+| UI max-amount vs API | Modal caps input; Postman/API is the source of truth |
 
 ### Export
 
 | Scenario | Handling |
 | --- | --- |
-| Empty date range | `404` — no orders found |
-| Range > 50,000 rows | `413` — asks user to narrow the range |
-| Large exports | Streamed via cursor (`batchSize: 500`), not loaded into memory |
-| Excel compatibility | UTF-8 BOM + proper CSV escaping for commas, quotes, newlines |
-| Timezone clarity | All exported dates formatted as UTC with a header comment |
+| Empty date range | `404` |
+| Range > 50,000 rows | `413` — narrow the range |
+| Large exports | Cursor stream (`batchSize: 500`), not loaded into memory |
+| Excel | UTF-8 BOM + CSV escaping |
+| Timezone | UTC timestamps + header comment |
 
-### Auth & security
+### Validation
 
-| Scenario | Handling |
-| --- | --- |
-| Expired access token | Frontend silently refreshes via httpOnly refresh cookie |
-| Cross-org access | Every repository query includes `organizationId` from the JWT |
-| Role-gated routes | Admin-only user management enforced in middleware |
-| Password reset | Time-limited token (10 min), cleared after use |
-| Validation errors | Zod issues mapped to field-level `errors` in the response envelope |
+Zod on every write path. Field-level `errors` in the response envelope so the UI can highlight inputs instead of a generic toast.
 
 ---
 
