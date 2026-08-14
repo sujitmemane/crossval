@@ -10,5 +10,5 @@ export const env = {
     refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
     smtpUser: process.env.SMTP_USER,
     smtpPass: process.env.SMTP_PASS,
-    frontendUrl: process.env.FRONTEND_URL,
+    frontendUrl: process.env.FRONTEND_URL?.replace(/\/$/, ''),
 };

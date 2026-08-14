@@ -13,6 +13,7 @@ import { env } from './config/env';
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(cors({ origin: env.frontendUrl, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());

@@ -39,10 +39,12 @@ export const toSafeUser = (user: InstanceType<typeof User>) => {
 const ACCESS_TOKEN_MAX_AGE_MS = parseDurationMs(env.accessTokenExpiresIn, 60 * 60 * 1000);
 const REFRESH_TOKEN_MAX_AGE_MS = parseDurationMs(env.refreshTokenExpiresIn, 7 * 24 * 60 * 60 * 1000);
 
+const isProd = env.nodeEnv === 'production';
+
 const baseCookieOptions: CookieOptions = {
     httpOnly: true,
-    secure: env.nodeEnv === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     path: '/',
 };
 
@@ -56,6 +58,6 @@ export const setAccessTokenCookie = (res: Response, accessToken: string) => {
 };
 
 export const clearAuthCookies = (res: Response) => {
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('accessToken', baseCookieOptions);
+    res.clearCookie('refreshToken', baseCookieOptions);
 };
